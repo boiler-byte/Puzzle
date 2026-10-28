@@ -1,6 +1,6 @@
 /* Puzzle PWA Service Worker */
-const SHELL_CACHE   = 'puzzle-shell-v1';
-const RUNTIME_CACHE = 'puzzle-runtime-v1';
+const SHELL_CACHE   = 'puzzle-shell-v2';
+const RUNTIME_CACHE = 'puzzle-runtime-v2';
 
 const APP_SHELL = [
   './',
