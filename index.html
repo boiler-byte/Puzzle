@@ -438,8 +438,11 @@ function playWin() {
 /* ============================================================
    Theme
    ============================================================ */
+let _fieldColorCache = null;
+
 function applyTheme(name) {
   if (!THEMES.includes(name)) name = 'dark';
+  _fieldColorCache = null;                 // Theme-Wechsel → Farbe neu cachen
   document.body.dataset.theme = name;
   localStorage.setItem('puzzle-theme', name);
   $('#themeSelect').value = name;
@@ -447,7 +450,9 @@ function applyTheme(name) {
   if (G.imageEl) requestRender();
 }
 function fieldColor() {
-  return getComputedStyle(document.body).getPropertyValue('--field').trim() || '#12151f';
+  if (_fieldColorCache !== null) return _fieldColorCache;
+  _fieldColorCache = getComputedStyle(document.body).getPropertyValue('--field').trim() || '#12151f';
+  return _fieldColorCache;
 }
 
 $('#themeSelect').addEventListener('change', e => applyTheme(e.target.value));
@@ -583,55 +588,58 @@ function renderBoard() {
   const vy1 = vy0 + h / G.view.scale;
 
   // Teile nach Gruppen ordnen (Reihenfolge = Z-Order)
-const groupOrder = [];
-const groupMap = new Map();
-for (let i = 0; i < G.field.length; i++) {
-  const p = G.field[i];
-  if (!groupMap.has(p.group)) {
-    const entry = { gid: p.group, pieces: [] };
-    groupMap.set(p.group, entry);
-    groupOrder.push(entry);
-  }
-  groupMap.get(p.group).pieces.push(p);
-}
-
-bctx.save();
-bctx.strokeStyle = 'rgba(0,0,0,0.45)';
-bctx.lineWidth   = 1 / G.view.scale;   // immer ~1 CSS-Pixel, egal welcher Zoom
-bctx.lineJoin    = 'round';
-bctx.lineCap     = 'round';
-
-for (let gi = 0; gi < groupOrder.length; gi++) {
-  const entry = groupOrder[gi];
-
-  // 1) Teile der Gruppe zeichnen
-  for (let i = 0; i < entry.pieces.length; i++) {
-    const p = entry.pieces[i];
-    const half = Math.max(cw, ch) / 2 + 2;
-    const cx = p.x + G.pw / 2, cy = p.y + G.ph / 2;
-    if (cx + half < vx0 || cx - half > vx1 || cy + half < vy0 || cy - half > vy1) continue;
-    drawPieceOn(bctx, p);
+  const groupOrder = [];
+  const groupMap = new Map();
+  for (let i = 0; i < G.field.length; i++) {
+    const p = G.field[i];
+    if (!groupMap.has(p.group)) {
+      const entry = { gid: p.group, pieces: [] };
+      groupMap.set(p.group, entry);
+      groupOrder.push(entry);
+    }
+    groupMap.get(p.group).pieces.push(p);
   }
 
-  // 2) Nur die äußeren Kanten der Gruppe nachziehen
-  for (let i = 0; i < entry.pieces.length; i++) {
-    const p = entry.pieces[i];
-    const half = Math.max(cw, ch) / 2 + 2;
-    const cx = p.x + G.pw / 2, cy = p.y + G.ph / 2;
-    if (cx + half < vx0 || cx - half > vx1 || cy + half < vy0 || cy - half > vy1) continue;
+  bctx.save();
+  bctx.strokeStyle = 'rgba(0,0,0,0.45)';
+  bctx.lineWidth   = 1 / G.view.scale;   // immer ~1 CSS-Pixel, egal welcher Zoom
+  bctx.lineJoin    = 'round';
+  bctx.lineCap     = 'round';
 
-    const outline = buildExternalEdgePath(p);
-    if (!outline) continue;
+  for (let gi = 0; gi < groupOrder.length; gi++) {
+    const entry = groupOrder[gi];
 
-    bctx.save();
-    bctx.translate(cx, cy);
-    if (p.rot) bctx.rotate(p.rot * Math.PI / 2);
-    bctx.translate(-G.pw / 2, -G.ph / 2);
-    bctx.stroke(outline);
-    bctx.restore();
+    // 1) Teile der Gruppe zeichnen
+    for (let i = 0; i < entry.pieces.length; i++) {
+      const p = entry.pieces[i];
+      const half = Math.max(cw, ch) / 2 + 2;
+      const cx = p.x + G.pw / 2, cy = p.y + G.ph / 2;
+      if (cx + half < vx0 || cx - half > vx1 || cy + half < vy0 || cy - half > vy1) continue;
+      drawPieceOn(bctx, p);
+    }
+
+    // 2) Alle Außenkanten dieser Gruppe in EINEM Path2D bündeln → EIN stroke
+    const groupPath = new Path2D();
+    let groupHas = false;
+    for (let i = 0; i < entry.pieces.length; i++) {
+      const p = entry.pieces[i];
+      const half = Math.max(cw, ch) / 2 + 2;
+      const cx = p.x + G.pw / 2, cy = p.y + G.ph / 2;
+      if (cx + half < vx0 || cx - half > vx1 || cy + half < vy0 || cy - half > vy1) continue;
+
+      const outline = buildExternalEdgePath(p);
+      if (!outline) continue;
+
+      const m = new DOMMatrix();
+      m.translateSelf(cx, cy);
+      if (p.rot) m.rotateSelf(p.rot * 90);
+      m.translateSelf(-G.pw / 2, -G.ph / 2);
+      groupPath.addPath(outline, m);
+      groupHas = true;
+    }
+    if (groupHas) bctx.stroke(groupPath);
   }
-}
-bctx.restore();
+  bctx.restore();
 }
 
 /* ============================================================
@@ -1226,9 +1234,10 @@ const pointers = new Map();
 let mode = 'idle';       // 'idle' | 'piece' | 'pan' | 'pinch'
 let dragInfo = null;
 let pinchInfo = null;
+let _gestureRect = null; // gecachtes boardCanvas-Rect während einer Geste
 
 function boardLocal(e) {
-  const r = boardCanvas.getBoundingClientRect();
+  const r = _gestureRect || boardCanvas.getBoundingClientRect();
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
@@ -1237,6 +1246,7 @@ boardCanvas.addEventListener('pointerdown', e => {
   e.preventDefault();
   getAudio();
   try { boardCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+  if (pointers.size === 0) _gestureRect = boardCanvas.getBoundingClientRect();
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
   if (pointers.size === 2) {
@@ -1289,7 +1299,7 @@ boardCanvas.addEventListener('pointermove', e => {
     const pts = [...pointers.values()];
     const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
-    const rect = boardCanvas.getBoundingClientRect();
+    const rect = _gestureRect || boardCanvas.getBoundingClientRect();
     const omx = pinchInfo.mid.x - rect.left, omy = pinchInfo.mid.y - rect.top;
     const nmx = mid.x - rect.left, nmy = mid.y - rect.top;
 
@@ -1339,7 +1349,11 @@ function endPointer(e, cancelled) {
   try { boardCanvas.releasePointerCapture(e.pointerId); } catch (err) {}
 
   if (mode === 'pinch') {
-    if (pointers.size < 2) { mode = 'idle'; pinchInfo = null; }
+    if (pointers.size < 2) {
+      mode = 'idle';
+      pinchInfo = null;
+      if (pointers.size === 0) _gestureRect = null;
+    }
     return;
   }
 
@@ -1354,7 +1368,7 @@ function endPointer(e, cancelled) {
     }
     dragInfo = null;
   }
-  if (pointers.size === 0) { mode = 'idle'; dragInfo = null; pinchInfo = null; }
+  if (pointers.size === 0) { mode = 'idle'; dragInfo = null; pinchInfo = null; _gestureRect = null; }
 }
 boardCanvas.addEventListener('pointerup', e => endPointer(e, false));
 boardCanvas.addEventListener('pointercancel', e => endPointer(e, true));
@@ -1368,13 +1382,45 @@ boardCanvas.addEventListener('wheel', e => {
   zoomAt(sx, sy, factor);
 }, { passive: false });
 
-// Doppeltipp zum Einpassen
-let lastTap = 0;
-boardCanvas.addEventListener('pointerup', e => {
+/* Doppeltipp zum Einpassen — ignoriert Pinch und Taps auf Teilen */
+let lastTap = 0, lastTapX = 0, lastTapY = 0;
+let tapCandidate = null;
+
+boardCanvas.addEventListener('pointerdown', e => {
   if (e.pointerType !== 'touch') return;
+  if (pointers.size === 1) {
+    // erste (einzige) Finger down → möglicher Tap
+    tapCandidate = { x: e.clientX, y: e.clientY };
+  } else {
+    // zweiter Finger → Pinch, Doppeltipp deaktivieren
+    tapCandidate = null;
+    lastTap = 0;
+  }
+});
+
+boardCanvas.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || !tapCandidate) return;
+  const moved = Math.hypot(e.clientX - tapCandidate.x, e.clientY - tapCandidate.y);
+  const tc = tapCandidate;
+  tapCandidate = null;
+  if (moved > 12) { lastTap = 0; return; }
+
+  // Nicht auf einem Teil → sonst wird nur gedreht
+  const r = boardCanvas.getBoundingClientRect();
+  const loc = { x: e.clientX - r.left, y: e.clientY - r.top };
+  const wp = screenToWorld(loc.x, loc.y);
+  if (hitTest(wp.x, wp.y)) { lastTap = 0; return; }
+
   const now = Date.now();
-  if (now - lastTap < 300) fitView();
-  lastTap = now;
+  if (now - lastTap < 300 &&
+      Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 40) {
+    fitView();
+    lastTap = 0;
+  } else {
+    lastTap = now;
+    lastTapX = e.clientX;
+    lastTapY = e.clientY;
+  }
 });
 
 /* ============================================================
@@ -1392,7 +1438,9 @@ function fmtTime(sec) {
 setInterval(() => {
   if (!G.running) return;
   G.timer = (performance.now() - G.timerBase) / 1000;
-  $('#btnTimer').textContent = fmtTime(G.timer);
+  const s = fmtTime(G.timer);
+  const el = $('#btnTimer');
+  if (el.textContent !== s) el.textContent = s;
 }, 250);
 
 /* ============================================================
