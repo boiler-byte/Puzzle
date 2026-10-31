@@ -890,24 +890,59 @@ function bringToFront(gid) {
 }
 
 function findSnap(g, gid) {
+  const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
   for (let i = 0; i < g.length; i++) {
     const a = g[i];
-    if (a.rot !== 0) continue;
-    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
     for (let d = 0; d < 4; d++) {
-      const nr = a.r + dirs[d][0], nc = a.c + dirs[d][1];
+      const nr = a.r + dirs[d][0];
+      const nc = a.c + dirs[d][1];
+
       if (nr < 0 || nr >= G.rows || nc < 0 || nc >= G.cols) continue;
+
       const b = G.grid[nr][nc];
       if (!b || !b.inField || b.group === null || b.group === gid) continue;
-      if (b.rot !== 0) continue;
-      const tx = b.x + (a.c - b.c) * G.pw;
-      const ty = b.y + (a.r - b.r) * G.ph;
+
+      // Wichtig: relative Orientierung muss übereinstimmen,
+      // nicht absolute Orientierung 0°.
+      if (a.rot !== b.rot) continue;
+
+      const dr = a.r - b.r;
+      const dc = a.c - b.c;
+
+      // Versatz im ungedrehten Raster ...
+      const vx = dc * G.pw;
+      const vy = dr * G.ph;
+
+      // ... und passend zur gemeinsamen Rotation drehen.
+      const angle = a.rot * Math.PI / 2;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+
+      const bcx = b.x + G.pw / 2;
+      const bcy = b.y + G.ph / 2;
+
+      const tcx = bcx + vx * cos - vy * sin;
+      const tcy = bcy + vx * sin + vy * cos;
+
+      const tx = tcx - G.pw / 2;
+      const ty = tcy - G.ph / 2;
+
       const dist = Math.hypot(a.x - tx, a.y - ty);
+
       if (dist <= G.snapTol) {
-        return { a, b, dx: tx - a.x, dy: ty - a.y, gid };
+        return {
+          a,
+          b,
+          dx: tx - a.x,
+          dy: ty - a.y,
+          gid
+        };
       }
     }
   }
+
   return null;
 }
 
