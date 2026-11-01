@@ -74,25 +74,36 @@ select{font-family:inherit;font-size:14px;background:var(--panel);color:var(--fg
 .icon-btn{width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;
   font-size:18px;border-radius:12px;flex:0 0 auto;}
 
-.gallery{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-  gap:12px;padding:6px 16px 20px;align-content:start;}
-.card{position:relative;border-radius:14px;overflow:hidden;background:var(--panel);
-  aspect-ratio:1;cursor:pointer;border:1px solid var(--border);
+/* Grid-Zeilen bleiben unabhängig von Bildabmessungen und Bildanzahl quadratisch. */
+.gallery{flex:1 1 0;min-height:0;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(130px,100%),1fr));
+  grid-auto-rows:max-content;align-items:start;align-content:start;
+  gap:12px;padding:6px 16px 20px;}
+.card{position:relative;min-width:0;width:100%;aspect-ratio:1 / 1;
+  border-radius:14px;overflow:hidden;background:var(--panel);
+  cursor:pointer;border:1px solid var(--border);
   transition:transform .15s,box-shadow .15s;}
 .card:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--shadow);}
-.card img{width:100%;height:100%;object-fit:cover;display:block;}
+/* Absolut positionierte Bilder beeinflussen die Höhe der Grid-Zeilen nicht. */
+.card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
 .card .label{position:absolute;left:0;right:0;bottom:0;padding:22px 9px 7px;font-size:12px;
   color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.82));font-weight:600;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .card .pct{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.62);color:#fff;
   font-size:11px;padding:3px 8px;border-radius:999px;font-weight:700;backdrop-filter:blur(4px);}
+.card .games{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.68);color:#fff;
+  font-size:11px;padding:3px 7px;border-radius:999px;font-weight:700;backdrop-filter:blur(4px);
+  max-width:calc(100% - 58px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .card .bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(0,0,0,.35);}
 .card .bar>i{display:block;height:100%;background:var(--accent);transition:width .3s;}
 .card.add{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;
-  color:var(--muted);font-size:13px;border-style:dashed;border-width:2px;}
+  color:var(--muted);font-size:13px;text-align:center;border-style:dashed;border-width:2px;}
 .card.add .plus{font-size:30px;line-height:1;}
 
+.start-topbar{flex-wrap:wrap;}
+#categoryFilter{min-width:112px;max-width:min(45vw,240px);text-overflow:ellipsis;}
+#btnVault{font-size:20px;}
 .addbar{flex:0 0 auto;display:flex;gap:10px;padding:10px 16px 18px;flex-wrap:wrap;
   border-top:1px solid var(--border);background:var(--bg2);}
 .addbar button{flex:1;min-width:130px;}
@@ -113,13 +124,36 @@ select{font-family:inherit;font-size:14px;background:var(--panel);color:var(--fg
 .pc-list{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
 .pc-btn{padding:11px 4px;border-radius:11px;border:1px solid var(--border);background:var(--panel);
   color:var(--fg);display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:700;font-size:14px;}
-.pc-btn .sub{font-size:9.5px;font-weight:600;color:var(--muted);letter-spacing:.2px;}
+.pc-btn .sub{font-size:9.5px;font-weight:600;color:var(--muted);letter-spacing:.1px;line-height:1.3;max-width:100%;}
+.pc-btn .sub .pc-stat{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pc-btn.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);}
 .pc-btn.active .sub{color:var(--accent-fg);opacity:.85;}
+.setup-category{display:flex;flex-direction:column;gap:8px;}
+.setup-category select{width:100%;}
+.setup-category select:disabled{opacity:.7;}
 .setup-actions{display:flex;gap:10px;}
 .setup-actions button{flex:1;padding:14px;font-size:16px;border-radius:12px;}
 #btnResume{display:none;background:var(--panel2);}
 #btnResume.show{display:block;}
+
+/* Startoptionen: zwei barrierearm bedienbare Schalter. */
+.setup-options{display:flex;flex-direction:column;gap:9px;}
+.setup-toggle{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 12px;
+  border:1px solid var(--border);border-radius:12px;background:var(--panel);cursor:pointer;
+  position:relative;}
+.setup-toggle-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.setup-toggle-name{font-size:14px;font-weight:700;}
+.setup-toggle-help{font-size:12px;line-height:1.35;color:var(--muted);}
+.setup-toggle input{position:absolute;opacity:0;width:1px;height:1px;}
+.setup-toggle-track{position:relative;flex:0 0 auto;width:46px;height:26px;border-radius:999px;
+  background:var(--border);border:1px solid var(--muted);transition:background .18s;}
+.setup-toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .18s;}
+.setup-toggle input:checked + .setup-toggle-track{background:var(--accent);border-color:var(--accent);}
+.setup-toggle input:checked + .setup-toggle-track::after{transform:translateX(20px);}
+.setup-toggle input:focus-visible + .setup-toggle-track{outline:3px solid var(--accent);outline-offset:3px;}
+.setup-score-note{margin:0 2px;color:var(--muted);font-size:12px;line-height:1.45;}
+.win-unranked{margin:0;color:var(--muted);font-size:13px;line-height:1.45;}
 
 /* ============ Game ============ */
 #screen-game{background:var(--field);}
@@ -154,8 +188,8 @@ select{font-family:inherit;font-size:14px;background:var(--panel);color:var(--fg
   display:none;align-items:center;justify-content:center;padding:20px;}
 .overlay.show{display:flex;}
 .overlay img{max-width:100%;max-height:86vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.7);}
-.overlay .close-x{position:absolute;top:16px;right:16px;width:44px;height:44px;font-size:20px;
-  border-radius:50%;background:rgba(255,255,255,.15);color:#fff;border:none;}
+#eyeOverlay, #eyeOverlay img{cursor:zoom-out;}
+#eyeOverlay img:focus-visible{outline:3px solid var(--accent);outline-offset:4px;}
 
 #loading{position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.72);display:none;
   align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;font-weight:600;}
@@ -168,6 +202,56 @@ select{font-family:inherit;font-size:14px;background:var(--panel);color:var(--fg
   background:rgba(0,0,0,.86);color:#fff;padding:11px 20px;border-radius:999px;font-size:13.5px;
   font-weight:600;opacity:0;pointer-events:none;transition:.28s;max-width:88vw;text-align:center;}
 #toast.show{opacity:1;transform:translate(-50%,0);}
+
+/* ============ Kategorien verwalten ============ */
+.category-dialog{width:min(100%,580px);max-height:min(85dvh,720px);display:flex;flex-direction:column;
+  gap:14px;padding:20px;background:var(--panel);color:var(--fg);
+  border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 65px var(--shadow);}
+.category-dialog-header{display:flex;align-items:center;gap:12px;}
+.category-dialog-header h2{flex:1;margin:0;font-size:19px;}
+.category-dialog p{margin:0;font-size:13px;line-height:1.5;color:var(--muted);}
+.category-add{display:flex;gap:8px;}
+.category-add input,.category-row input{min-width:0;flex:1;background:var(--field);color:var(--fg);
+  border:1px solid var(--border);border-radius:9px;padding:10px;font:inherit;font-size:14px;}
+.category-add button{flex:0 0 auto;}
+.category-list{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.category-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  padding:9px;border:1px solid var(--border);border-radius:11px;background:var(--panel2);}
+.category-row input{flex:1 1 140px;}
+.category-row button{padding:9px 10px;}
+.category-empty{padding:16px 8px;text-align:center;color:var(--muted);font-size:13px;}
+@media(max-width:400px){.category-dialog{padding:14px;}.category-row button{font-size:12px;}}
+
+/* ============ Tresor-Passwortdialog ============ */
+.vault-dialog{width:min(100%,420px);max-height:90dvh;overflow-y:auto;
+  padding:22px;background:var(--panel);color:var(--fg);border:1px solid var(--border);
+  border-radius:16px;box-shadow:0 20px 65px var(--shadow);}
+.vault-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.vault-header h2{font-size:19px;margin:0;flex:1;}
+.vault-description{font-size:13px;line-height:1.5;color:var(--muted);margin:0 0 20px;}
+.vault-form{display:flex;flex-direction:column;gap:14px;}
+.vault-field{display:flex;flex-direction:column;gap:7px;}
+.vault-field label{font-size:13px;font-weight:600;}
+.vault-field input{width:100%;padding:12px 11px;border:1px solid var(--border);
+  border-radius:10px;background:var(--field);color:var(--fg);font:inherit;font-size:16px;}
+.vault-field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.vault-input-wrap{position:relative;display:flex;align-items:center;}
+.vault-field .vault-input-wrap input{padding-right:53px;}
+.vault-eye-button{position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  width:42px;height:40px;display:flex;align-items:center;justify-content:center;
+  padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted);}
+.vault-eye-button:hover{background:var(--panel2);color:var(--fg);}
+.vault-eye-button:active{transform:translateY(-50%) scale(.97);}
+.vault-eye-button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+.vault-eye-button svg{display:block;pointer-events:none;}
+.vault-eye-button .vault-eye-slash{display:none;}
+.vault-eye-button[aria-pressed="true"] .vault-eye-slash{display:block;}
+.vault-field[hidden]{display:none;}
+.vault-error{color:#ff7d7d;font-size:13px;line-height:1.4;margin:0;}
+.vault-error:empty{display:none;}
+.vault-actions{display:flex;gap:10px;margin-top:6px;}
+.vault-actions button{flex:1 1 0;min-width:0;min-height:44px;padding:10px 6px;font-size:13px;white-space:normal;}
+@media(max-width:400px){.vault-dialog{padding:16px;}}
 
 /* ============ Win ============ */
 #screen-win{align-items:center;justify-content:center;padding:26px;text-align:center;gap:14px;
@@ -184,15 +268,56 @@ select{font-family:inherit;font-size:14px;background:var(--panel);color:var(--fg
 
 
 body[data-theme="holz"]{
-  background-color: #2e2011;
-  background: url('img/holz.webp') center/cover no-repeat;
-  #screen-start, #screen-setup, .board-wrap { background: none;}
+  background: #2e2011 url('img/holz.webp') center/cover no-repeat;
+}
+/* Auch der Spielscreen und der Canvas-Untergrund müssen durchsichtig sein,
+   sonst verdeckt die Spielfeldfarbe das Holzbild. */
+body[data-theme="holz"] #screen-start,
+body[data-theme="holz"] #screen-setup,
+body[data-theme="holz"] #screen-game,
+body[data-theme="holz"] .board-wrap{background:transparent;}
+
+/* ============ Dropdown Menü ============ */
+.dropdown{position:relative;flex:0 0 auto;}
+.dropdown-content{
+  position:absolute;top:calc(100% + 6px);left:0;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:6px;min-width:230px;max-width:92vw;
+  box-shadow:0 10px 30px var(--shadow);
+  display:none;flex-direction:column;gap:4px;z-index:100;
+}
+.dropdown-content.show{display:flex;}
+.dropdown-content button{
+  text-align:left;padding:11px 14px;border-radius:9px;
+  background:transparent;border:none;color:var(--fg);
+  display:flex;align-items:center;gap:10px;
+  justify-content:flex-start;font-size:14px;width:100%;
+  transition:background .12s;
+}
+.dropdown-content button:hover{background:var(--panel2);}
+.dropdown-content button.active{
+  background:var(--accent);color:var(--accent-fg);
+}
+.dropdown-content button.active::after{
+  content:'✓';margin-left:auto;font-weight:700;
+}
+
+/* ============ Große Teile ============ */
+body.large-pieces .footer{
+  height:33vh;max-height:330px;min-height:160px;
+}
+body.large-pieces .footer-grid{
+  grid-template-columns:repeat(auto-fill,104px);
+  gap:10px;
 }
 
 @media (max-width:400px){
-  .gallery{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:9px;}
+  .start-topbar{gap:8px;}
+  #categoryFilter{max-width:min(40vw,140px);}
+  .gallery{grid-template-columns:repeat(auto-fill,minmax(min(108px,100%),1fr));gap:9px;}
   .pc-list{grid-template-columns:repeat(4,1fr);gap:6px;}
   .pc-btn{font-size:13px;padding:9px 2px;}
+  .pc-btn .sub{font-size:9px;letter-spacing:0;}
   .tool-btn{width:38px;height:38px;font-size:17px;}
 }
 </style>
@@ -201,9 +326,14 @@ body[data-theme="holz"]{
 
 <!-- ================= START ================= -->
 <section id="screen-start" class="screen active">
-  <div class="topbar">
+  <div class="topbar start-topbar">
     <h1>Puzzle</h1>
     <div class="spacer"></div>
+    <select id="categoryFilter" title="Bilder nach Kategorie filtern" aria-label="Bilderkategorie">
+      <option value="all">Alle</option>
+    </select>
+    <button class="icon-btn" id="btnVault" type="button" title="Tresor einrichten und schließen"
+            aria-label="Tresor einrichten und schließen" aria-pressed="false">🔓</button>
     <button class="icon-btn" id="btnInstall" title="Spiel installieren"
           aria-label="Spiel installieren" style="display:none;">⬇</button>
     <select id="themeSelectStart" title="Design">
@@ -232,9 +362,32 @@ body[data-theme="holz"]{
     <div class="setup-preview"><img id="setupImg" alt=""></div>
     <div class="pc-label">Puzzle-Teile</div>
     <div class="pc-list" id="pcList"></div>
+    <div class="setup-options" role="group" aria-label="Startoptionen">
+      <label class="setup-toggle" for="setupShuffle">
+        <span class="setup-toggle-text">
+          <span class="setup-toggle-name">Teile mischen</span>
+          <span class="setup-toggle-help">Zufällige Reihenfolge in der Ablage</span>
+        </span>
+        <input id="setupShuffle" type="checkbox" role="switch" checked>
+        <span class="setup-toggle-track" aria-hidden="true"></span>
+      </label>
+      <label class="setup-toggle" for="setupRotate">
+        <span class="setup-toggle-text">
+          <span class="setup-toggle-name">Teile zufällig drehen</span>
+          <span class="setup-toggle-help">Zufällige Drehung beim Spielstart</span>
+        </span>
+        <input id="setupRotate" type="checkbox" role="switch" checked>
+        <span class="setup-toggle-track" aria-hidden="true"></span>
+      </label>
+      <p class="setup-score-note">Bestzeit und Spielezähler werden nur erfasst, wenn beide Schalter beim Start aktiviert sind. Beim Fortsetzen gelten die ursprünglichen Startoptionen.</p>
+    </div>
     <div class="setup-actions">
       <button id="btnStart" class="primary">Starten</button>
       <button id="btnResume">Fortsetzen</button>
+    </div>
+    <div class="setup-category">
+      <label for="setupCategory" class="pc-label">Kategorie</label>
+      <select id="setupCategory" aria-label="Kategorie des Bildes"></select>
     </div>
     <button id="btnDeleteImg" class="danger">Bild löschen</button>
   </div>
@@ -243,7 +396,7 @@ body[data-theme="holz"]{
 <!-- ================= GAME ================= -->
 <section id="screen-game" class="screen">
   <div class="toolbar">
-    <button class="tool-btn" id="btnBroom" title="Teile vom Feld wischen">🧹</button>
+    <button class="tool-btn" id="btnGameBack" title="Zurück zum Setup" aria-label="Zurück">←</button>
     <select id="themeSelect" title="Design">
       <option value="dark">Dark</option>
       <option value="light">Light</option>
@@ -251,7 +404,15 @@ body[data-theme="holz"]{
       <option value="glass">Glass</option>
       <option value="holz">Holz</option>
     </select>
-    <button class="tool-btn" id="btnEye" title="Bild anzeigen">👁</button>
+    <div class="dropdown">
+      <button class="tool-btn" id="btnMenu" title="Menü" aria-label="Menü">☰</button>
+      <div class="dropdown-content" id="menuDropdown">
+        <button id="btnBroom">🧹 Teile vom Feld wischen</button>
+        <button id="btnCenter">🎯 Zentrieren</button>
+        <button id="btnLargePieces">🔍 Große Teile</button>
+      </div>
+    </div>
+    <button class="tool-btn" id="btnEye" title="Bild anzeigen" aria-label="Bild anzeigen">👁</button>
     <div class="spacer"></div>
     <button class="tool-btn timer" id="btnTimer" title="Klicken zum Ausblenden">00:00</button>
   </div>
@@ -272,13 +433,83 @@ body[data-theme="holz"]{
     <div class="stat"><div class="v" id="winTime">00:00</div><div class="k">Zeit</div></div>
     <div class="stat"><div class="v" id="winPieces">0</div><div class="k">Teile</div></div>
   </div>
+  <p class="win-unranked" id="winUnranked" hidden>Ohne Wertung: Bestzeit und Spielezähler bleiben unverändert.</p>
   <button class="primary" id="btnWinHome">Zurück zum Start</button>
 </section>
 
 <!-- ================= OVERLAYS ================= -->
-<div class="overlay" id="eyeOverlay">
-  <button class="close-x" id="eyeClose">✕</button>
-  <img id="eyeImg" alt="Vollbild">
+<div class="overlay" id="eyeOverlay" role="dialog" aria-modal="true" aria-label="Bildansicht">
+  <img id="eyeImg" alt="Vollbild – zum Schließen anklicken" role="button" tabindex="0"
+       aria-label="Bildansicht schließen">
+</div>
+
+<!-- Kategorien: Nur benutzerdefinierte Einträge sind editierbar. -->
+<div class="overlay" id="categoryOverlay" role="presentation">
+  <div class="category-dialog" role="dialog" aria-modal="true" aria-labelledby="categoryDialogTitle">
+    <div class="category-dialog-header">
+      <h2 id="categoryDialogTitle">Kategorien verwalten</h2>
+      <button class="icon-btn" id="categoryClose" aria-label="Dialog schließen">✕</button>
+    </div>
+    <p>Feste Kategorien können nicht bearbeitet werden. Beim Entfernen einer eigenen Kategorie werden auch ihre Bilder und Spielstände gelöscht.</p>
+    <form class="category-add" id="categoryAddForm">
+      <input id="categoryNewName" type="text" maxlength="50" autocomplete="off"
+             aria-label="Name der neuen Kategorie" placeholder="Neue Kategorie" required>
+      <button class="primary" type="submit">Hinzufügen</button>
+    </form>
+    <div class="category-list" id="categoryList"></div>
+  </div>
+</div>
+
+<!-- Tresor: Passwort beim ersten Schließen erstellen, zum Öffnen prüfen. -->
+<div class="overlay" id="vaultOverlay" role="presentation">
+  <div class="vault-dialog" role="dialog" aria-modal="true" aria-labelledby="vaultDialogTitle"
+       aria-describedby="vaultDescription">
+    <div class="vault-header">
+      <h2 id="vaultDialogTitle">Tresor</h2>
+      <button class="icon-btn" id="vaultClose" type="button" aria-label="Dialog schließen">✕</button>
+    </div>
+    <p class="vault-description" id="vaultDescription"></p>
+    <form id="vaultForm" class="vault-form">
+      <div class="vault-field">
+        <label for="vaultPassword">Passwort</label>
+        <div class="vault-input-wrap">
+          <input id="vaultPassword" type="password" autocomplete="current-password" required>
+          <button class="vault-eye-button" type="button" data-vault-input="vaultPassword"
+                  aria-controls="vaultPassword" aria-label="Passwort anzeigen"
+                  aria-pressed="false" title="Passwort anzeigen">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 12c2.5-4 5.8-6 10-6s7.5 2 10 6c-2.5 4-5.8 6-10 6S4.5 16 2 12Z"/>
+              <circle cx="12" cy="12" r="3"/>
+              <path class="vault-eye-slash" d="M3 3l18 18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="vault-field" id="vaultConfirmField" hidden>
+        <label for="vaultConfirm">Passwort wiederholen</label>
+        <div class="vault-input-wrap">
+          <input id="vaultConfirm" type="password" autocomplete="new-password">
+          <button class="vault-eye-button" type="button" data-vault-input="vaultConfirm"
+                  aria-controls="vaultConfirm" aria-label="Passwortwiederholung anzeigen"
+                  aria-pressed="false" title="Passwortwiederholung anzeigen">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 12c2.5-4 5.8-6 10-6s7.5 2 10 6c-2.5 4-5.8 6-10 6S4.5 16 2 12Z"/>
+              <circle cx="12" cy="12" r="3"/>
+              <path class="vault-eye-slash" d="M3 3l18 18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <p id="vaultError" class="vault-error" role="alert" aria-live="polite"></p>
+      <div class="vault-actions">
+        <button id="vaultCancel" type="button">Abbrechen</button>
+        <button id="vaultChange" type="button" hidden>Passwort ändern</button>
+        <button id="vaultSubmit" class="primary" type="submit">Bestätigen</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div id="loading"><div class="spinner"></div><div id="loadingText">Puzzle wird erstellt…</div></div>
@@ -296,11 +527,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const PIECE_COUNTS = [36, 64, 100, 144, 225, 400, 500, 1000];
 const THEMES = ['dark', 'light', 'retro', 'glass', 'holz'];
-const MAX_STORE_WIDTH = 1600;
-const MAX_WORLD_DIM = 1600;
+const MAX_STORE_WIDTH = 3000;
+const MAX_WORLD_DIM = 3000;
 
 /* ============================================================
-   Start-Randomisierung – hier ein-/ausschalten
+   Standardwerte der Start-Schalter (pro neu geöffnetem Setup).
+   Die Einstellungen werden für jedes gestartete Spiel festgehalten.
    ============================================================ */
 const SHUFFLE_ON_START          = true; // Teile-Reihenfolge beim Start mischen
 const RANDOM_ROTATE_ON_START    = true; // Teile beim Start zufällig drehen
@@ -325,58 +557,713 @@ function showLoading(on, text) {
 }
 
 /* ============================================================
-   IndexedDB
+   IndexedDB v5: neue Datenbank, keine Datenübernahme aus früheren Versionen.
+   Auch Standardbilder sind persistente Einträge in images (mit stats).
+   Einmal gelöschte Standardbilder werden nicht erneut angelegt.
    ============================================================ */
+const PUZZLE_DB_NAME = 'puzzleDB-v5';
+const PUZZLE_DB_VERSION = 1;
+const PUZZLE_DB_STORES = ['images', 'saves', 'categories'];
 let _dbPromise = null;
+let _dbConnection = null;
+let _dbRecovery = null;
+
+function databaseError(name, message) {
+  const error = new Error(message);
+  error.name = name;
+  return error;
+}
+
+function isStorageUnavailable(error) {
+  return ['SecurityError', 'NotAllowedError', 'QuotaExceededError',
+    'DatabaseBlockedError', 'DatabaseUnavailableError'].includes(error?.name);
+}
+
+function shouldRecoverOperation(error) {
+  return ['NotFoundError', 'InvalidStateError', 'UnknownError',
+    'VersionError'].includes(error?.name);
+}
+
+function openPuzzleDatabase() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(databaseError('DatabaseUnavailableError',
+        'IndexedDB ist in diesem Browser nicht verfuegbar.'));
+      return;
+    }
+    let request;
+    try {
+      request = indexedDB.open(PUZZLE_DB_NAME, PUZZLE_DB_VERSION);
+    } catch (error) { reject(error); return; }
+
+    let finished = false;
+    const finish = (error, connection) => {
+      if (finished) {
+        if (connection) connection.close();
+        return;
+      }
+      finished = true;
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve(connection);
+    };
+    const timeout = setTimeout(() => finish(databaseError('DatabaseBlockedError',
+      'Datenbankzugriff blockiert. Bitte andere Puzzle-Tabs schliessen.')), 12000);
+
+    request.onupgradeneeded = () => {
+      const connection = request.result;
+      // Nur beim allerersten Anlegen von v5 Standardbilder eintragen.
+      // Nach dem Löschen werden sie nicht bei jedem Start wiederhergestellt.
+      const images = connection.createObjectStore('images', { keyPath: 'id' });
+      images.createIndex('categoryId', 'categoryId', { unique: false });
+      for (const preset of PRESETS) {
+        images.put({ id: preset.id, name: preset.name, src: preset.src,
+          categoryId: 'standard', builtin: true, created: Date.now(), stats: {} });
+      }
+      connection.createObjectStore('saves', { keyPath: 'key' });
+      const categories = connection.createObjectStore('categories', { keyPath: 'id' });
+      categories.put({ id: 'standard', name: 'Standard', builtin: true });
+      categories.put({ id: 'upload', name: 'Upload', builtin: true });
+      categories.put({ id: 'safe', name: 'Tresor', builtin: true });
+    };
+    request.onsuccess = () => finish(null, request.result);
+    request.onerror = () => finish(request.error || new Error('Datenbank konnte nicht geoeffnet werden.'));
+    request.onblocked = () => finish(databaseError('DatabaseBlockedError',
+      'Ein anderer Tab blockiert die Datenbank. Bitte andere Puzzle-Tabs schliessen.'));
+  });
+}
+
+// Das reine Oeffnen reicht nicht: Schema und Lese-Transaktionen pruefen.
+function verifyPuzzleDatabase(connection) {
+  for (const name of PUZZLE_DB_STORES) {
+    if (!connection.objectStoreNames.contains(name)) {
+      return Promise.reject(databaseError('DatabaseSchemaError',
+        'Datenbankspeicher fehlt: ' + name));
+    }
+  }
+  return new Promise((resolve, reject) => {
+    let transaction;
+    try {
+      transaction = connection.transaction(PUZZLE_DB_STORES, 'readonly');
+      const images = transaction.objectStore('images');
+      if (!images.indexNames.contains('categoryId')) {
+        throw databaseError('DatabaseSchemaError', 'Kategorie-Index fehlt.');
+      }
+      // Auch einen tatsaechlichen Lesezugriff auf jeden Speicher testen.
+      for (const name of PUZZLE_DB_STORES) transaction.objectStore(name).count();
+    } catch (error) {
+      if (transaction) try { transaction.abort(); } catch (_) {}
+      reject(error);
+      return;
+    }
+    transaction.oncomplete = () => resolve(connection);
+    transaction.onerror = () => reject(transaction.error || new Error('Datenbank nicht lesbar.'));
+    transaction.onabort = () => reject(transaction.error || new Error('Datenbank-Lesezugriff abgebrochen.'));
+  });
+}
+
+function deletePuzzleDatabase() {
+  return new Promise((resolve, reject) => {
+    let request;
+    try { request = indexedDB.deleteDatabase(PUZZLE_DB_NAME); }
+    catch (error) { reject(error); return; }
+    let finished = false;
+    const finish = error => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve();
+    };
+    const timeout = setTimeout(() => finish(databaseError('DatabaseBlockedError',
+      'Datenbank kann nicht neu erstellt werden: andere Tabs blockieren sie.')), 12000);
+    request.onsuccess = () => finish();
+    request.onerror = () => finish(request.error || new Error('Datenbank konnte nicht geloescht werden.'));
+    request.onblocked = () => finish(databaseError('DatabaseBlockedError',
+      'Bitte andere Puzzle-Tabs schliessen, damit die Datenbank neu erstellt werden kann.'));
+  });
+}
+
+function attachDatabase(connection) {
+  _dbConnection = connection;
+  connection.onversionchange = () => {
+    connection.close();
+    if (_dbConnection === connection) {
+      _dbConnection = null;
+      _dbPromise = null;
+    }
+  };
+  return connection;
+}
+
+async function createReadableDatabase() {
+  let connection = null;
+  try {
+    connection = await openPuzzleDatabase();
+    await verifyPuzzleDatabase(connection);
+    return attachDatabase(connection);
+  } catch (error) {
+    if (connection) connection.close();
+    if (isStorageUnavailable(error)) throw error;
+    console.warn('Puzzle-v5-Datenbank nicht lesbar; wird neu erstellt:', error);
+    // Nur die eigene v5-Datenbank zuruecksetzen, NIEMALS ältere Datenbanken.
+    await deletePuzzleDatabase();
+    connection = await openPuzzleDatabase();
+    try {
+      await verifyPuzzleDatabase(connection);
+      toast('Nicht lesbare Datenbank wurde neu erstellt');
+      return attachDatabase(connection);
+    } catch (retryError) {
+      connection.close();
+      throw retryError;
+    }
+  }
+}
+
 function db() {
   if (!_dbPromise) {
-    _dbPromise = new Promise((resolve, reject) => {
-      const req = indexedDB.open('puzzleDB', 1);
-      req.onupgradeneeded = () => {
-        const d = req.result;
-        if (!d.objectStoreNames.contains('images')) d.createObjectStore('images', { keyPath: 'id' });
-        if (!d.objectStoreNames.contains('saves')) d.createObjectStore('saves', { keyPath: 'key' });
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+    _dbPromise = createReadableDatabase().catch(error => {
+      _dbPromise = null;
+      throw error;
     });
   }
   return _dbPromise;
 }
-async function idbGet(store, key) {
-  const d = await db();
-  return new Promise((res, rej) => {
-    const t = d.transaction(store, 'readonly');
-    const r = t.objectStore(store).get(key);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
+
+async function recoverDatabase(connection) {
+  if (_dbRecovery) return _dbRecovery;
+  if (_dbConnection && _dbConnection !== connection) return _dbConnection;
+  if (connection) connection.close();
+  _dbConnection = null;
+  _dbRecovery = (async () => {
+    await deletePuzzleDatabase();
+    const fresh = await openPuzzleDatabase();
+    try {
+      await verifyPuzzleDatabase(fresh);
+      toast('Nicht lesbare Datenbank wurde neu erstellt');
+      return attachDatabase(fresh);
+    } catch (error) {
+      fresh.close();
+      throw error;
+    }
+  })();
+  _dbPromise = _dbRecovery.catch(error => {
+    _dbPromise = null;
+    throw error;
   });
+  try { return await _dbRecovery; }
+  finally { _dbRecovery = null; }
+}
+
+async function databaseTransaction(store, mode, operation) {
+  const perform = connection => new Promise((resolve, reject) => {
+    let transaction;
+    let result;
+    try {
+      transaction = connection.transaction(store, mode);
+      const request = operation(transaction.objectStore(store));
+      if (request) request.onsuccess = () => { result = request.result; };
+    } catch (error) { reject(error); return; }
+    transaction.oncomplete = () => resolve(result);
+    transaction.onerror = () => reject(transaction.error || new Error('Datenbankfehler'));
+    transaction.onabort = () => reject(transaction.error || new Error('Datenbank-Transaktion abgebrochen'));
+  });
+
+  const connection = await db();
+  try {
+    return await perform(connection);
+  } catch (error) {
+    if (!shouldRecoverOperation(error)) throw error;
+    console.warn('Datenbank-Lese-/Schemafehler, v5-Datenbank wird neu erstellt:', error);
+    const fresh = await recoverDatabase(connection);
+    return perform(fresh);
+  }
+}
+
+async function idbGet(store, key) {
+  return databaseTransaction(store, 'readonly', objectStore => objectStore.get(key));
 }
 async function idbAll(store) {
-  const d = await db();
-  return new Promise((res, rej) => {
-    const t = d.transaction(store, 'readonly');
-    const r = t.objectStore(store).getAll();
-    r.onsuccess = () => res(r.result || []);
-    r.onerror = () => rej(r.error);
-  });
+  return (await databaseTransaction(store, 'readonly', objectStore => objectStore.getAll())) || [];
 }
-async function idbPut(store, val) {
-  const d = await db();
-  return new Promise((res, rej) => {
-    const t = d.transaction(store, 'readwrite');
-    t.objectStore(store).put(val);
-    t.oncomplete = () => res();
-    t.onerror = () => rej(t.error);
-  });
+async function idbPut(store, value) {
+  await databaseTransaction(store, 'readwrite', objectStore => objectStore.put(value));
 }
 async function idbDelete(store, key) {
+  await databaseTransaction(store, 'readwrite', objectStore => objectStore.delete(key));
+}
+
+/* In einem Schreibvorgang Spielstatistik aktualisieren und den Spielstand entfernen.
+   Die Statistik liegt ausschließlich im zugehörigen Datensatz in images. */
+async function recordCompletedGame(imageId, pieceCount, elapsedSeconds) {
+  const connection = await db();
+  return new Promise((resolve, reject) => {
+    let transaction;
+    let updated = null;
+    let failure = null;
+    try {
+      transaction = connection.transaction(['images', 'saves'], 'readwrite');
+      const images = transaction.objectStore('images');
+      const request = images.get(imageId);
+      request.onsuccess = () => {
+        const image = request.result;
+        if (!image) {
+          failure = new Error('Bild nicht mehr vorhanden; Statistik konnte nicht gespeichert werden.');
+          transaction.abort();
+          return;
+        }
+        const stats = image.stats && typeof image.stats === 'object' && !Array.isArray(image.stats)
+          ? { ...image.stats } : {};
+        const current = stats[String(pieceCount)];
+        const games = Number.isSafeInteger(current?.games) && current.games >= 0
+          ? current.games : 0;
+        const best = Number.isFinite(current?.bestTime) && current.bestTime >= 0
+          ? current.bestTime : null;
+        const seconds = Math.max(0, Math.round(elapsedSeconds * 1000) / 1000);
+        updated = { games: games + 1, bestTime: best === null ? seconds : Math.min(best, seconds) };
+        stats[String(pieceCount)] = updated;
+        image.stats = stats;
+        images.put(image);
+        transaction.objectStore('saves').delete(imageId + '|' + pieceCount);
+      };
+    } catch (error) {
+      if (transaction) try { transaction.abort(); } catch (_) {}
+      reject(error);
+      return;
+    }
+    transaction.oncomplete = () => resolve(updated);
+    transaction.onerror = () => reject(transaction.error || new Error('Statistik konnte nicht gespeichert werden.'));
+    transaction.onabort = () => reject(failure || transaction.error || new Error('Statistik-Speicherung abgebrochen.'));
+  });
+}
+
+/* Bilder inkl. aller dazugehörigen laufenden Spielstände atomar löschen. */
+async function deleteImageAndSaves(imageId) {
+  const connection = await db();
+  return new Promise((resolve, reject) => {
+    let transaction;
+    try {
+      transaction = connection.transaction(['images', 'saves'], 'readwrite');
+      transaction.objectStore('images').delete(imageId);
+      const cursorRequest = transaction.objectStore('saves').openCursor();
+      cursorRequest.onsuccess = () => {
+        const cursor = cursorRequest.result;
+        if (!cursor) return;
+        if (cursor.value.imageId === imageId) cursor.delete();
+        cursor.continue();
+      };
+    } catch (error) {
+      if (transaction) try { transaction.abort(); } catch (_) {}
+      reject(error);
+      return;
+    }
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error || new Error('Bild konnte nicht gelöscht werden.'));
+    transaction.onabort = () => reject(transaction.error || new Error('Löschen abgebrochen.'));
+  });
+}
+
+/* ============================================================
+   Kategorien (IndexedDB)
+   ============================================================ */
+const BUILTIN_CATEGORIES = [
+  { id: 'standard', name: 'Standard', builtin: true },
+  { id: 'upload', name: 'Upload', builtin: true },
+  { id: 'safe', name: 'Tresor', builtin: true },
+];
+let categories = BUILTIN_CATEGORIES.slice();
+let activeCategory = 'all';
+
+// Ältere Versionen nutzten zeitweise "tresor" statt "safe".
+// Beide IDs gelten als derselbe Tresor, ohne gespeicherte Bilder zu verlieren.
+function normalizeCategoryId(id) { return id === 'tresor' ? 'safe' : id; }
+function isVaultCategoryId(id) { return normalizeCategoryId(id) === 'safe'; }
+
+/* ============================================================
+   Tresor: Sitzungssperre und passwortbasierte Verifikation.
+   Die Bilddateien selbst bleiben in IndexedDB unverschlüsselt.
+   ============================================================ */
+const VAULT_STORAGE_KEY = 'puzzleVault-v5';
+const VAULT_PBKDF2_ITERATIONS = 240000;
+
+function readVaultCredential() {
+  try {
+    const raw = localStorage.getItem(VAULT_STORAGE_KEY);
+    if (raw === null) return null;
+    const credential = JSON.parse(raw);
+    if (credential?.version === 1 && typeof credential.salt === 'string' &&
+        typeof credential.hash === 'string' && Number.isInteger(credential.iterations) &&
+        credential.iterations >= 100000 && credential.iterations <= 1000000) {
+      return credential;
+    }
+  } catch (error) {
+    console.warn('Tresor-Passwortdaten nicht lesbar:', error);
+  }
+  // Bei fehlerhaften/gesperrten Speicherdaten niemals ungeschützt öffnen.
+  return { invalid: true };
+}
+
+let vaultCredential = readVaultCredential();
+// Ohne Passwort ist der Tresor offen; nach einem Neuladen mit Passwort gesperrt.
+let vaultLocked = !!vaultCredential;
+let vaultDialogMode = null;
+let vaultDialogSequence = 0;
+let vaultSubmitting = false;
+
+function categoryById(id) {
+  return categories.find(cat => cat.id === normalizeCategoryId(id));
+}
+
+function updateVaultButton() {
+  const button = $('#btnVault');
+  button.textContent = vaultLocked ? '🔒' : '🔓';
+  const label = vaultLocked ? 'Tresor öffnen' :
+    vaultCredential ? 'Tresor schließen' : 'Tresor einrichten und schließen';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.setAttribute('aria-pressed', String(vaultLocked));
+}
+
+function vaultBase64(bytes) {
+  return btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
+}
+function vaultFromBase64(value) {
+  return Uint8Array.from(atob(value), ch => ch.charCodeAt(0));
+}
+
+async function deriveVaultHash(password, salt, iterations) {
+  if (!window.crypto?.subtle || !window.crypto.getRandomValues) {
+    throw new Error('Sichere Passwortfunktionen sind in diesem Browser nicht verfügbar.');
+  }
+  const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password),
+    'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({
+    name: 'PBKDF2', salt, iterations, hash: 'SHA-256'
+  }, material, 256);
+  return new Uint8Array(bits);
+}
+
+async function verifyVaultPassword(password) {
+  if (!vaultCredential || vaultCredential.invalid) {
+    throw new Error('Die Tresor-Passwortdaten sind beschädigt oder nicht verfügbar.');
+  }
+  const expected = vaultFromBase64(vaultCredential.hash);
+  const actual = await deriveVaultHash(password, vaultFromBase64(vaultCredential.salt),
+    vaultCredential.iterations);
+  if (expected.length !== actual.length) return false;
+  let difference = 0;
+  for (let i = 0; i < expected.length; i++) difference |= expected[i] ^ actual[i];
+  return difference === 0;
+}
+
+function setVaultInputVisibility(inputId, visible) {
+  const input = document.getElementById(inputId);
+  const button = document.querySelector(`.vault-eye-button[data-vault-input="${inputId}"]`);
+  input.type = visible ? 'text' : 'password';
+  button.setAttribute('aria-pressed', String(visible));
+  const fieldName = inputId === 'vaultConfirm' ? 'Passwortwiederholung' : 'Passwort';
+  const label = fieldName + (visible ? ' verbergen' : ' anzeigen');
+  button.setAttribute('aria-label', label);
+  button.title = label;
+}
+
+function resetVaultInputVisibility() {
+  setVaultInputVisibility('vaultPassword', false);
+  setVaultInputVisibility('vaultConfirm', false);
+}
+
+$$('.vault-eye-button').forEach(button => {
+  button.addEventListener('click', () => {
+    const inputId = button.dataset.vaultInput;
+    const input = document.getElementById(inputId);
+    setVaultInputVisibility(inputId, input.type === 'password');
+    input.focus({ preventScroll: true });
+  });
+});
+
+function showVaultDialog(mode) {
+  ++vaultDialogSequence;
+  vaultDialogMode = mode;
+  const creating = mode === 'create' || mode === 'change';
+  const changing = mode === 'change';
+  $('#vaultDialogTitle').textContent = creating ? 'Tresor-Passwort erstellen' : 'Tresor öffnen';
+  $('#vaultDescription').textContent = changing
+    ? 'Lege ein neues Passwort mit mindestens 1 Zeichen fest. Der Tresor bleibt geschlossen.'
+    : creating
+      ? 'Lege ein Passwort mit mindestens 1 Zeichen fest. Danach wird der Tresor geschlossen und seine Bilder ausgeblendet.'
+      : 'Gib dein Tresor-Passwort ein, um die Kategorie und ihre Bilder wieder anzuzeigen.';
+  $('#vaultConfirmField').hidden = !creating;
+  $('#vaultConfirm').required = creating;
+  $('#vaultPassword').minLength = creating ? 1 : 0;
+  $('#vaultPassword').autocomplete = creating ? 'new-password' : 'current-password';
+  $('#vaultChange').hidden = mode !== 'unlock';
+  $('#vaultSubmit').textContent = changing ? 'Passwort speichern' : creating ? 'Tresor schließen' : 'Tresor öffnen';
+  $('#vaultPassword').value = '';
+  $('#vaultConfirm').value = '';
+  resetVaultInputVisibility();
+  $('#vaultError').textContent = '';
+  $('#vaultOverlay').classList.add('show');
+  $('#vaultPassword').focus();
+}
+
+function closeVaultDialog() {
+  ++vaultDialogSequence;
+  $('#vaultOverlay').classList.remove('show');
+  $('#vaultPassword').value = '';
+  $('#vaultConfirm').value = '';
+  resetVaultInputVisibility();
+  $('#vaultError').textContent = '';
+  vaultDialogMode = null;
+  $('#btnVault').focus();
+}
+
+// Alle sichtbaren Tresor-Inhalte sofort entfernen (auch vor dem DB-Reload).
+function concealVaultContent() {
+  if (activeCategory === 'safe' || activeCategory === 'tresor') activeCategory = 'all';
+  const categorySelect = $('#categoryFilter');
+  categorySelect.querySelector('option[value="safe"]')?.remove();
+  categorySelect.querySelector('option[value="tresor"]')?.remove();
+  categorySelect.value = activeCategory;
+
+  for (const card of $$('#gallery .card[data-category-id="safe"]')) {
+    const src = card.querySelector('img')?.src;
+    if (src?.startsWith('blob:')) URL.revokeObjectURL(src);
+    card.remove();
+  }
+
+  const exposedSetup = setupImage && isVaultCategoryId(setupImage.categoryId);
+  const exposedGame = isVaultCategoryId(G.categoryId);
+  if (document.body.dataset.screen !== 'start' && (exposedSetup || exposedGame)) {
+    if (document.body.dataset.screen === 'game') saveGame().catch(console.error);
+    G.running = false;
+  }
+  if (exposedSetup) {
+    if (setupImageUrl) URL.revokeObjectURL(setupImageUrl);
+    setupImageUrl = null;
+    setupImage = null;
+    $('#setupImg').removeAttribute('src');
+    $('#setupTitle').textContent = 'Puzzle';
+    $('#setupCategory').replaceChildren();
+    $('#pcList').replaceChildren();
+  }
+  if (exposedGame) {
+    finishBroomSweep(false);
+    G.running = false;
+    G.imageId = null;
+    G.imageEl = null;
+    G.imageUrl = null;
+    G.imageName = '';
+    G.categoryId = null;
+    G.pieces = [];
+    G.grid = [];
+    G.field = [];
+    G.groups = new Map();
+    G.worldW = G.worldH = 0;
+    $('#eyeImg').removeAttribute('src');
+    $('#winImg').removeAttribute('src');
+    $('#eyeOverlay').classList.remove('show');
+    footerGrid.replaceChildren();
+    boardCanvas.width = boardCanvas.width;
+  }
+  if (document.body.dataset.screen !== 'start' && (exposedSetup || exposedGame)) {
+    showScreen('start', 'replace');
+  }
+}
+
+function lockVault() {
+  if (!vaultCredential) { showVaultDialog('create'); return; }
+  vaultLocked = true;
+  updateVaultButton();
+  concealVaultContent();
+  buildGallery();
+}
+
+$('#btnVault').addEventListener('click', () => {
+  if (vaultDialogMode) return;
+  if (vaultLocked) showVaultDialog('unlock');
+  else if (!vaultCredential) showVaultDialog('create');
+  else lockVault();
+});
+
+$('#vaultClose').addEventListener('click', closeVaultDialog);
+$('#vaultCancel').addEventListener('click', closeVaultDialog);
+// Passwort ändern ist nur nach Prüfung des bisherigen Passworts möglich.
+// Bis zum erfolgreichen Speichern bleibt der alte Schlüssel gültig.
+$('#vaultChange').addEventListener('click', async () => {
+  if (vaultDialogMode !== 'unlock' || vaultSubmitting) return;
+  const sequence = vaultDialogSequence;
+  const password = $('#vaultPassword').value;
+  const changeButton = $('#vaultChange');
+  const submitButton = $('#vaultSubmit');
+  vaultSubmitting = true;
+  changeButton.disabled = true;
+  submitButton.disabled = true;
+  $('#vaultError').textContent = '';
+  try {
+    if (!password) throw new Error('Bitte gib dein bisheriges Passwort ein.');
+    const valid = await verifyVaultPassword(password);
+    if (sequence !== vaultDialogSequence) return;
+    if (!valid) throw new Error('Falsches Passwort. Bitte erneut versuchen.');
+    showVaultDialog('change');
+  } catch (error) {
+    if (sequence !== vaultDialogSequence) return;
+    $('#vaultError').textContent = error.message || 'Passwortprüfung fehlgeschlagen.';
+    $('#vaultPassword').value = '';
+    $('#vaultPassword').focus();
+  } finally {
+    vaultSubmitting = false;
+    changeButton.disabled = false;
+    submitButton.disabled = false;
+  }
+});
+$('#vaultOverlay').addEventListener('click', event => {
+  if (event.target === $('#vaultOverlay')) closeVaultDialog();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && vaultDialogMode) {
+    event.preventDefault();
+    closeVaultDialog();
+  }
+});
+
+$('#vaultForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!vaultDialogMode || vaultSubmitting) return;
+  const mode = vaultDialogMode;
+  const sequence = vaultDialogSequence;
+  vaultSubmitting = true;
+  const password = $('#vaultPassword').value;
+  const button = $('#vaultSubmit');
+  button.disabled = true;
+  $('#vaultError').textContent = '';
+  try {
+    if (mode === 'create' || mode === 'change') {
+      if (mode === 'change' && (!vaultCredential || !vaultLocked)) {
+        throw new Error('Der Tresor muss zum Ändern des Passworts geschlossen sein.');
+      }
+      if (password.length < 1) throw new Error('Das Passwort muss mindestens 1 Zeichen haben.');
+      if (password !== $('#vaultConfirm').value) {
+        throw new Error('Die Passwörter stimmen nicht überein.');
+      }
+      if (!window.crypto?.subtle || !window.crypto.getRandomValues) {
+        throw new Error('Dieser Browser unterstützt keine sichere Passwortspeicherung.');
+      }
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const hash = await deriveVaultHash(password, salt, VAULT_PBKDF2_ITERATIONS);
+      if (sequence !== vaultDialogSequence) return; // Dialog während Berechnung geschlossen
+      const credential = { version: 1, iterations: VAULT_PBKDF2_ITERATIONS,
+        salt: vaultBase64(salt), hash: vaultBase64(hash) };
+      try {
+        localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(credential));
+      } catch (error) {
+        throw new Error('Passwort konnte nicht gespeichert werden. Prüfe die Browser-Einstellungen.');
+      }
+      vaultCredential = credential;
+      closeVaultDialog();
+      lockVault();
+      toast(mode === 'change' ? 'Tresor-Passwort geändert' : 'Tresor geschlossen');
+    } else {
+      const valid = await verifyVaultPassword(password);
+      if (sequence !== vaultDialogSequence) return;
+      if (!valid) {
+        throw new Error('Falsches Passwort. Bitte erneut versuchen.');
+      }
+      vaultLocked = false;
+      updateVaultButton();
+      closeVaultDialog();
+      await buildGallery();
+      toast('Tresor geöffnet');
+    }
+  } catch (error) {
+    $('#vaultError').textContent = error.message || 'Der Tresor konnte nicht geöffnet werden.';
+    $('#vaultPassword').value = '';
+    $('#vaultConfirm').value = '';
+    $('#vaultPassword').focus();
+  } finally {
+    vaultSubmitting = false;
+    button.disabled = false;
+  }
+});
+
+// Ein in einem anderen Tab gesetztes Passwort sofort respektieren.
+window.addEventListener('storage', event => {
+  if (event.key !== VAULT_STORAGE_KEY) return;
+  vaultCredential = readVaultCredential();
+  vaultLocked = !!vaultCredential;
+  if (vaultDialogMode) closeVaultDialog();
+  updateVaultButton();
+  if (vaultLocked) concealVaultContent();
+  buildGallery();
+});
+
+updateVaultButton();
+
+function categoryNameValid(rawName, existingId = null) {
+  const name = rawName.trim().replace(/\s+/g, ' ');
+  if (!name || name.length > 50) {
+    toast('Bitte einen Kategorienamen mit maximal 50 Zeichen eingeben');
+    return null;
+  }
+  if ([...BUILTIN_CATEGORIES, ...categories].some(cat => cat.id !== existingId &&
+      cat.name.toLocaleLowerCase('de') === name.toLocaleLowerCase('de'))) {
+    toast('Dieser Kategoriename existiert bereits');
+    return null;
+  }
+  return name;
+}
+
+async function loadCategories() {
+  const saved = await idbAll('categories');
+  const own = saved.filter(cat => !cat.builtin &&
+    !['standard', 'upload', 'safe', 'tresor'].includes(cat.id));
+  own.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  categories = [...BUILTIN_CATEGORIES.filter(cat => !vaultLocked || !isVaultCategoryId(cat.id)), ...own];
+  activeCategory = normalizeCategoryId(activeCategory);
+  if (activeCategory !== 'all' && !categoryById(activeCategory)) activeCategory = 'all';
+  const select = $('#categoryFilter');
+  select.replaceChildren(new Option('Alle', 'all'));
+  for (const cat of categories) select.add(new Option(cat.name, cat.id));
+  select.add(new Option('Kategorien verwalten…', '__manage__'));
+  select.value = activeCategory;
+  return categories;
+}
+
+function uploadCategoryId() {
+  return activeCategory !== 'all' && activeCategory !== 'standard' && categoryById(activeCategory)
+    ? activeCategory : 'upload';
+}
+
+/* Löschen als eine Transaktion: Bilddateien, Spielstände und Kategorie. */
+async function deleteCategoryWithImages(categoryId) {
+  if (['standard', 'upload', 'safe', 'tresor'].includes(categoryId)) throw new Error('Feste Kategorie');
   const d = await db();
-  return new Promise((res, rej) => {
-    const t = d.transaction(store, 'readwrite');
-    t.objectStore(store).delete(key);
-    t.oncomplete = () => res();
-    t.onerror = () => rej(t.error);
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction(['categories', 'images', 'saves'], 'readwrite');
+    const deletedImageIds = new Set();
+    const imageCursor = tx.objectStore('images').index('categoryId')
+      .openCursor(IDBKeyRange.only(categoryId));
+    imageCursor.onsuccess = () => {
+      const cursor = imageCursor.result;
+      if (cursor) {
+        deletedImageIds.add(cursor.value.id);
+        cursor.delete();
+        cursor.continue();
+      } else {
+        const saveCursor = tx.objectStore('saves').openCursor();
+        saveCursor.onsuccess = () => {
+          const saved = saveCursor.result;
+          if (saved) {
+            if (deletedImageIds.has(saved.value.imageId)) saved.delete();
+            saved.continue();
+          } else {
+            tx.objectStore('categories').delete(categoryId);
+          }
+        };
+      }
+    };
+    tx.oncomplete = () => resolve(deletedImageIds);
+    tx.onerror = () => reject(tx.error || new Error('Datenbankfehler'));
+    tx.onabort = () => reject(tx.error || new Error('Löschen abgebrochen'));
   });
 }
 
@@ -436,6 +1323,32 @@ function playWin() {
 }
 
 /* ============================================================
+   Einstellungen: nur localStorage.puzzleGame, keine Uebernahme alter Keys
+   ============================================================ */
+const PUZZLE_SETTINGS_KEY = 'puzzleGame';
+const DEFAULT_PUZZLE_SETTINGS = { 'large-pieces': false, theme: 'dark' };
+function readPuzzleSettings() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PUZZLE_SETTINGS_KEY) || 'null');
+    return {
+      'large-pieces': parsed?.['large-pieces'] === true,
+      theme: THEMES.includes(parsed?.theme) ? parsed.theme : 'dark'
+    };
+  } catch (error) {
+    return { ...DEFAULT_PUZZLE_SETTINGS };
+  }
+}
+let puzzleSettings = readPuzzleSettings();
+function storePuzzleSettings() {
+  try {
+    localStorage.setItem(PUZZLE_SETTINGS_KEY, JSON.stringify(puzzleSettings));
+    // Alte getrennte Keys werden nicht gelesen oder migriert.
+    localStorage.removeItem('puzzle-theme');
+    localStorage.removeItem('puzzle-large-pieces');
+  } catch (error) { console.warn('Puzzle-Einstellungen nicht speicherbar:', error); }
+}
+
+/* ============================================================
    Theme
    ============================================================ */
 let _fieldColorCache = null;
@@ -444,7 +1357,8 @@ function applyTheme(name) {
   if (!THEMES.includes(name)) name = 'dark';
   _fieldColorCache = null;                 // Theme-Wechsel → Farbe neu cachen
   document.body.dataset.theme = name;
-  localStorage.setItem('puzzle-theme', name);
+  puzzleSettings.theme = name;
+  storePuzzleSettings();
   $('#themeSelect').value = name;
   $('#themeSelectStart').value = name;
   if (G.imageEl) requestRender();
@@ -499,6 +1413,7 @@ const G = {
   imageName: '',
   imageEl: null,
   imageUrl: null,
+  categoryId: null,
   pieceCount: 0,
   rows: 0, cols: 0,
   pw: 0, ph: 0, T: 0,
@@ -515,10 +1430,15 @@ const G = {
   timer: 0,
   timerBase: 0,
   running: false,
-  started: false
+  winHandled: false,
+  shuffleOnStart: SHUFFLE_ON_START,
+  randomRotateOnStart: RANDOM_ROTATE_ON_START,
+  statEligible: SHUFFLE_ON_START && RANDOM_ROTATE_ON_START,
+  started: false,
+  largePieces: false
 };
 
-applyTheme(localStorage.getItem('puzzle-theme') || 'dark');
+applyTheme(puzzleSettings.theme);
 
 /* ============================================================
    Canvas / Rendering
@@ -530,10 +1450,87 @@ const hitCtx = hitCanvas.getContext('2d');
 let dpr = window.devicePixelRatio || 1;
 let renderQueued = false;
 
+// Abwaerts-Wischanimation: die fliegenden Teile sind nur ein visuelles Abbild.
+// Logisch sind sie beim Wischen bereits vom Spielfeld entfernt und speicherbar.
+let broomSweep = null;
+let broomSweepFrame = 0;
+
 function requestRender() {
   if (renderQueued) return;
   renderQueued = true;
   requestAnimationFrame(() => { renderQueued = false; renderBoard(); });
+}
+
+/* ============================================================
+   Dreh-Animation
+   ============================================================ */
+let animActive = false;
+
+/* startRotateAnim erhält die Startwerte jetzt explizit.
+   Damit kann der Aufrufer die ALTEN (logischen) Werte übergeben,
+   bevor er p.x/p.y/p.rot auf den neuen Zielzustand setzt. */
+function startRotateAnim(p, pivotX, pivotY, deltaRot, dur, fromX, fromY, fromRot) {
+  p.anim = {
+    type: 'rotate',
+    fromX: fromX ?? p.x,
+    fromY: fromY ?? p.y,
+    fromRot: fromRot ?? p.rot,
+    pivotX, pivotY, deltaRot,
+    start: performance.now(),
+    dur: dur || 200
+  };
+  if (!animActive) {
+    animActive = true;
+    requestAnimationFrame(animTick);
+  }
+}
+
+function animTick() {
+  const now = performance.now();
+  let anyActive = false;
+  const ease = t => 1 - Math.pow(1 - t, 3);
+
+  for (const p of G.pieces) {
+    if (!p.anim) continue;
+    const a = p.anim;
+    const t = Math.min(1, (now - a.start) / a.dur);
+    const e = ease(t);
+
+    if (a.type === 'rotate') {
+      const rot = a.fromRot + a.deltaRot * e;
+      const fromCX = a.fromX + G.pw / 2;
+      const fromCY = a.fromY + G.ph / 2;
+      const dx = fromCX - a.pivotX;
+      const dy = fromCY - a.pivotY;
+      const angle = a.deltaRot * e * Math.PI / 2;
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      const newCX = a.pivotX + dx * cos - dy * sin;
+      const newCY = a.pivotY + dx * sin + dy * cos;
+      p.renderX = newCX - G.pw / 2;
+      p.renderY = newCY - G.ph / 2;
+      p.renderRot = rot;
+    }
+
+    if (t >= 1) {
+      p.anim = null;
+      delete p.renderX;
+      delete p.renderY;
+      delete p.renderRot;
+    } else {
+      anyActive = true;
+    }
+  }
+  requestRender();
+  if (anyActive) requestAnimationFrame(animTick);
+  else animActive = false;
+}
+
+function cancelAnim(p) {
+  if (!p.anim) return;
+  p.anim = null;
+  delete p.renderX;
+  delete p.renderY;
+  delete p.renderRot;
 }
 
 function screenToWorld(sx, sy) {
@@ -543,11 +1540,14 @@ function screenToWorld(sx, sy) {
 function drawPieceOn(ctx, p) {
   const cw = G.pw + 2 * G.T;
   const ch = G.ph + 2 * G.T;
-  const cx = p.x + G.pw / 2;
-  const cy = p.y + G.ph / 2;
+  const rx = p.renderX ?? p.x;
+  const ry = p.renderY ?? p.y;
+  const cx = rx + G.pw / 2;
+  const cy = ry + G.ph / 2;
+  const rr = p.renderRot ?? p.rot;
   ctx.save();
   ctx.translate(cx, cy);
-  if (p.rot) ctx.rotate(p.rot * Math.PI / 2);
+  if (rr) ctx.rotate(rr * Math.PI / 2);
   ctx.drawImage(p.canvas, -cw / 2, -ch / 2, cw, ch);
   ctx.restore();
 }
@@ -564,9 +1564,12 @@ function renderBoard() {
   bctx.setTransform(1, 0, 0, 1, 0, 0);
   bctx.clearRect(0, 0, W, H);
 
-  // Spielfeld-Hintergrund
-  bctx.fillStyle = fieldColor();
-  bctx.fillRect(0, 0, W, H);
+  // Holz-Design: die Holzstruktur hinter dem transparenten Canvas zeigen.
+  // Für alle anderen Designs bleibt die einfarbige Spielfeldfläche erhalten.
+  if (document.body.dataset.theme !== 'holz') {
+    bctx.fillStyle = fieldColor();
+    bctx.fillRect(0, 0, W, H);
+  }
 
   const s = G.view.scale * dpr;
   bctx.setTransform(s, 0, 0, s, G.view.x * dpr, G.view.y * dpr);
@@ -613,7 +1616,9 @@ function renderBoard() {
     for (let i = 0; i < entry.pieces.length; i++) {
       const p = entry.pieces[i];
       const half = Math.max(cw, ch) / 2 + 2;
-      const cx = p.x + G.pw / 2, cy = p.y + G.ph / 2;
+      const rx = p.renderX ?? p.x;
+      const ry = p.renderY ?? p.y;
+      const cx = rx + G.pw / 2, cy = ry + G.ph / 2;
       if (cx + half < vx0 || cx - half > vx1 || cy + half < vy0 || cy - half > vy1) continue;
       drawPieceOn(bctx, p);
     }
@@ -624,7 +1629,9 @@ function renderBoard() {
     for (let i = 0; i < entry.pieces.length; i++) {
       const p = entry.pieces[i];
       const half = Math.max(cw, ch) / 2 + 2;
-      const cx = p.x + G.pw / 2, cy = p.y + G.ph / 2;
+      const rx = p.renderX ?? p.x;
+      const ry = p.renderY ?? p.y;
+      const cx = rx + G.pw / 2, cy = ry + G.ph / 2;
       if (cx + half < vx0 || cx - half > vx1 || cy + half < vy0 || cy - half > vy1) continue;
 
       const outline = buildExternalEdgePath(p);
@@ -632,7 +1639,8 @@ function renderBoard() {
 
       const m = new DOMMatrix();
       m.translateSelf(cx, cy);
-      if (p.rot) m.rotateSelf(p.rot * 90);
+      const rr = p.renderRot ?? p.rot;
+      if (rr) m.rotateSelf(rr * 90);
       m.translateSelf(-G.pw / 2, -G.ph / 2);
       groupPath.addPath(outline, m);
       groupHas = true;
@@ -640,6 +1648,54 @@ function renderBoard() {
     if (groupHas) bctx.stroke(groupPath);
   }
   bctx.restore();
+
+  // Bereits entfernte Einzelteile noch kurz sichtbar nach unten herauswischen.
+  renderBroomSweep();
+}
+
+// Im Bildschirm-Koordinatensystem zeichnen, damit die Teile unabhaengig
+// von Zoom und Spielfeldverschiebung stets nach UNTEN aus dem Bild fallen.
+function renderBroomSweep() {
+  if (!broomSweep) return;
+  const elapsed = performance.now() - broomSweep.startedAt;
+  bctx.save();
+  bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const ghost of broomSweep.ghosts) {
+    const t = clamp((elapsed - ghost.delay) / ghost.duration, 0, 1);
+    if (t >= 1) continue;
+    const fall = t * t; // nach unten beschleunigen
+    const opacity = t < 0.66 ? 1 : (1 - t) / 0.34;
+    bctx.save();
+    bctx.globalAlpha = clamp(opacity, 0, 1);
+    bctx.translate(ghost.x + ghost.drift * fall, ghost.y + ghost.drop * fall);
+    bctx.rotate(ghost.rot + ghost.spin * t);
+    bctx.drawImage(ghost.canvas,
+      -ghost.width / 2, -ghost.height / 2, ghost.width, ghost.height);
+    bctx.restore();
+  }
+  bctx.restore();
+}
+
+function finishBroomSweep(updateFooter = true) {
+  if (!broomSweep) return;
+  const finished = broomSweep;
+  broomSweep = null;
+  if (broomSweepFrame) cancelAnimationFrame(broomSweepFrame);
+  broomSweepFrame = 0;
+  for (const ghost of finished.ghosts) ghost.piece.sweeping = false;
+  $('#btnBroom').disabled = false;
+  if (updateFooter && document.body.dataset.screen === 'game') buildFooter();
+  requestRender();
+}
+
+function tickBroomSweep(now) {
+  if (!broomSweep) { broomSweepFrame = 0; return; }
+  if (now - broomSweep.startedAt >= broomSweep.totalDuration) {
+    finishBroomSweep();
+    return;
+  }
+  requestRender();
+  broomSweepFrame = requestAnimationFrame(tickBroomSweep);
 }
 
 /* ============================================================
@@ -774,11 +1830,6 @@ async function buildPuzzle(imageEl, rows, cols, worldW, worldH, hE, vE) {
       cx.drawImage(imageEl, -c * pw, -r * ph, worldW, worldH);
       cx.restore();                    // Clip weg, translate(T,T) bleibt
 
-    //   cx.lineWidth = 1;
-    //   cx.lineJoin = 'round';
-    //   cx.strokeStyle = 'rgba(0,0,0,0.42)';
-    //   cx.stroke(path);                 // jetzt exakt auf der Teilkontur
-
       cx.restore();                    // Gesamtzustand zurück
 
       const piece = {
@@ -817,12 +1868,11 @@ function shuffleArray(arr) {
   return arr;
 }
 
-function randomizePieces() {
-  // Reihenfolge mischen (wirkt auf die Ablage unten)
-  if (SHUFFLE_ON_START) shuffleArray(G.pieces);
+function randomizePieces(shuffleOnStart, randomRotateOnStart) {
+  // Optionen dieses Spiels statt der unveränderlichen Defaultwerte verwenden.
+  if (shuffleOnStart) shuffleArray(G.pieces);
 
-  // Zufällige Drehung
-  if (RANDOM_ROTATE_ON_START) {
+  if (randomRotateOnStart) {
     const maxTurns   = clamp(Math.round(RANDOM_ROTATE_MAX_TURNS), 0, 3);
     const zeroChance = clamp(RANDOM_ROTATE_ZERO_CHANCE, 0, 1);
     for (let i = 0; i < G.pieces.length; i++) {
@@ -849,6 +1899,14 @@ function fitView() {
   G.view.y = (h - G.worldH * G.view.scale) / 2;
   requestRender();
 }
+function centerView() {
+  if (!G.worldW) return;
+  const w = boardCanvas.clientWidth;
+  const h = boardCanvas.clientHeight;
+  G.view.x = (w - G.worldW * G.view.scale) / 2;
+  G.view.y = (h - G.worldH * G.view.scale) / 2;
+  requestRender();
+}
 function zoomAt(sx, sy, factor) {
   const newScale = clamp(G.view.scale * factor, 0.03, 8);
   const wx = (sx - G.view.x) / G.view.scale;
@@ -865,10 +1923,13 @@ function zoomAt(sx, sy, factor) {
 function hitTest(wx, wy) {
   for (let i = G.field.length - 1; i >= 0; i--) {
     const p = G.field[i];
-    const cx = p.x + G.pw / 2, cy = p.y + G.ph / 2;
+    const rx = p.renderX ?? p.x;
+    const ry = p.renderY ?? p.y;
+    const rr = p.renderRot ?? p.rot;
+    const cx = rx + G.pw / 2, cy = ry + G.ph / 2;
     let dx = wx - cx, dy = wy - cy;
-    if (p.rot) {
-      const a = -p.rot * Math.PI / 2;
+    if (rr) {
+      const a = -rr * Math.PI / 2;
       const cos = Math.cos(a), sin = Math.sin(a);
       const nx = dx * cos - dy * sin;
       const ny = dx * sin + dy * cos;
@@ -957,7 +2018,11 @@ function resolveSnaps(piece) {
     if (!snap) break;
 
     // Gruppe verschieben
-    for (let i = 0; i < g.length; i++) { g[i].x += snap.dx; g[i].y += snap.dy; }
+    for (let i = 0; i < g.length; i++) {
+      g[i].x += snap.dx;
+      g[i].y += snap.dy;
+      cancelAnim(g[i]);
+    }
 
     // Gruppen verschmelzen
     const toGid = snap.b.group;
@@ -979,24 +2044,50 @@ function resolveSnaps(piece) {
   return snappedAny;
 }
 
+/* Rotation: Logik und Animation strikt trennen.
+   - Logischer Zielzustand (x/y/rot) wird sofort geschrieben.
+   - Die Animation startet von den ALTEN Werten und trifft exakt
+     den neuen Zielzustand, ohne danach zurückzuspringen. */
 function rotatePiece(piece) {
   if (!piece) return;
+  const DUR = 200;
+
   if (piece.inField && piece.group !== null) {
     const g = G.groups.get(piece.group);
     if (!g) return;
+
+    // Laufende Animationen sauber beenden.
+    // WICHTIG: NICHT q.rot = q.renderRot o. ä. setzen – renderRot ist ein
+    // Zwischenwert (z. B. 1.5) und würde die Logik zerstören.
+    for (let i = 0; i < g.length; i++) {
+      if (g[i].anim) cancelAnim(g[i]);
+    }
+
     const cx = piece.x + G.pw / 2, cy = piece.y + G.ph / 2;
+
     for (let i = 0; i < g.length; i++) {
       const q = g[i];
-      const qcx = q.x + G.pw / 2, qcy = q.y + G.ph / 2;
+      // ALTE (logische) Werte merken, BEVOR der Zielzustand geschrieben wird
+      const oldX = q.x, oldY = q.y, oldRot = q.rot;
+
+      const qcx = oldX + G.pw / 2, qcy = oldY + G.ph / 2;
       const dx = qcx - cx, dy = qcy - cy;
-      q.x = cx + (-dy) - G.pw / 2;
-      q.y = cy + (dx) - G.ph / 2;
-      q.rot = (q.rot + 1) % 4;
+      const newX = cx + (-dy) - G.pw / 2;
+      const newY = cy + (dx) - G.ph / 2;
+      const newRot = (oldRot + 1) % 4;
+
+      // Logischer Zielzustand sofort setzen
+      q.x = newX; q.y = newY; q.rot = newRot;
+
+      // Animation startet an den ALTEN Werten und endet am Zielzustand
+      startRotateAnim(q, cx, cy, 1, DUR, oldX, oldY, oldRot);
     }
   } else {
     piece.rot = (piece.rot + 1) % 4;
     if (piece.thumb) {
-      piece.thumb.style.transform = `rotate(${piece.rot * 90}deg)`;
+      // Kumulativer CSS-Winkel, damit beim 4. Klick NICHT rückwärts gedreht wird
+      piece._thumbRot = (piece._thumbRot || 0) + 90;
+      piece.thumb.style.transform = `rotate(${piece._thumbRot}deg)`;
     }
   }
   requestRender();
@@ -1016,18 +2107,51 @@ function getProgress() {
 }
 
 function checkWin() {
-  if (G.pieces.length === 0) return;
-  if (G.groups.size !== 1) return;
-  if (G.field.length !== G.pieces.length) return;
-  // gewonnen
+  if (G.winHandled || G.pieces.length === 0) return;
+  if (G.groups.size !== 1 || G.field.length !== G.pieces.length) return;
+
+  // Spielende sofort markieren; weitere Events dürfen kein zweites Spiel zählen.
+  G.winHandled = true;
   G.running = false;
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  G.timer = Math.max(0, (performance.now() - G.timerBase) / 1000);
+  const imageId = G.imageId;
+  const pieceCount = G.pieceCount;
+  const elapsed = G.timer;
+  const statEligible = G.statEligible;
   playWin();
-  $('#winTime').textContent = fmtTime(G.timer);
-  $('#winPieces').textContent = G.pieces.length;
+  $('#winTime').textContent = fmtTime(elapsed);
+  $('#winPieces').textContent = pieceCount;
   $('#winImg').src = G.imageUrl;
-  // Spielstand löschen
-  idbDelete('saves', G.imageId + '|' + G.pieceCount).catch(() => {});
-  setTimeout(() => showScreen('win'), 350);
+  $('#winUnranked').hidden = statEligible;
+
+  (async () => {
+    try {
+      if (statEligible) {
+        const result = await recordCompletedGame(imageId, pieceCount, elapsed);
+        if (setupImage?.id === imageId) {
+          setupImage.stats = { ...(setupImage.stats || {}), [String(pieceCount)]: result };
+        }
+      } else {
+        // Das Spiel ist beendet, aber zählt nicht: Spielstand entfernen,
+        // ohne den gespeicherten Highscore oder Spielezähler zu verändern.
+        await idbDelete('saves', imageId + '|' + pieceCount);
+      }
+    } catch (error) {
+      console.error('Spielabschluss konnte nicht gespeichert werden:', error);
+      toast('Spielabschluss konnte nicht gespeichert werden', 4500);
+    }
+    // Bei zwischenzeitlicher Navigation keinen früheren Win-Screen öffnen.
+    if (document.body.dataset.screen !== 'game' || G.imageId !== imageId ||
+        G.pieceCount !== pieceCount || !G.winHandled) return;
+    // Tresor-Sperre auch während des asynchronen Speicherns respektieren.
+    if (vaultLocked && (!G.imageEl || isVaultCategoryId(G.categoryId))) {
+      showScreen('start', 'replace');
+      await buildGallery();
+    } else {
+      showScreen('win');
+    }
+  })().catch(error => console.error('Spielende fehlgeschlagen:', error));
 }
 
 /* ============================================================
@@ -1039,12 +2163,17 @@ function saveGameThrottled() {
   _saveTimer = setTimeout(() => { _saveTimer = null; saveGame(); }, 450);
 }
 async function saveGame() {
-  if (!G.imageId || !G.pieceCount) return;
+  // Beim Verlassen des Games ist der Screen noch aktiv. Außerhalb davon
+  // keine alten bzw. später gelöschten Spielstände erneut anlegen.
+  if (document.body.dataset.screen !== 'game') return;
+  if (!G.imageId || !G.pieceCount || G.winHandled) return;
   if (G.groups.size === 1 && G.field.length === G.pieces.length) return; // gewonnen
   const data = {
     key: G.imageId + '|' + G.pieceCount,
     imageId: G.imageId,
     pieceCount: G.pieceCount,
+    shuffleOnStart: G.shuffleOnStart,
+    randomRotateOnStart: G.randomRotateOnStart,
     rows: G.rows, cols: G.cols,
     worldW: G.worldW, worldH: G.worldH,
     hE: G.hE, vE: G.vE,
@@ -1068,11 +2197,12 @@ async function saveGame() {
 const footerGrid = $('#footerGrid');
 
 function buildThumbSize() {
+  const base = G.largePieces ? 104 : 52;
   const cw = G.pw + 2 * G.T;
   const ch = G.ph + 2 * G.T;
   const ar = cw / ch;
-  let tw = 52, th = 52;
-  if (ar >= 1) th = Math.round(52 / ar); else tw = Math.round(52 * ar);
+  let tw = base, th = base;
+  if (ar >= 1) th = Math.round(base / ar); else tw = Math.round(base * ar);
   const s = tw / cw;
   return { w: Math.round(G.pw * s), h: Math.round(G.ph * s), tw, th };
 }
@@ -1087,7 +2217,8 @@ function buildFooter() {
 
   for (let i = 0; i < G.pieces.length; i++) {
     const p = G.pieces[i];
-    if (p.inField) continue;
+    // Erst nach Abschluss der Wischanimation in der Ablage einblenden.
+    if (p.inField || p.sweeping) continue;
 
     const d = document.createElement('canvas');
     d.className = 'thumb';
@@ -1101,7 +2232,10 @@ function buildFooter() {
     c.imageSmoothingQuality = 'high';
     c.drawImage(p.canvas, 0, 0, bw, bh);
 
-    if (p.rot) d.style.transform = `rotate(${p.rot * 90}deg)`;
+    // Kumulativen CSS-Winkel aus logischer Rotation initialisieren.
+    // _thumbRot wächst monoton, damit Übergänge nie rückwärts laufen.
+    p._thumbRot = p.rot * 90;
+    if (p.rot) d.style.transform = `rotate(${p._thumbRot}deg)`;
     d.dataset.idx = p.idx;
     p.thumb = d;
 
@@ -1121,7 +2255,7 @@ function buildFooter() {
 
 function createGhost(piece, baseW, baseH) {
   const c = document.createElement('canvas');
-  const maxSide = 120;
+  const maxSide = G.largePieces ? 200 : 120;
   const ar = piece.canvas.width / piece.canvas.height;
   let gw = maxSide, gh = maxSide;
   if (ar >= 1) gh = Math.round(maxSide / ar); else gw = Math.round(maxSide * ar);
@@ -1211,55 +2345,132 @@ function placePieceOnField(piece, wx, wy) {
    Toolbar-Aktionen
    ============================================================ */
 $('#btnBroom').addEventListener('click', () => {
-  if (!G.pieces.length) return;
-  if (!G.field.length) return;
+  if (broomSweep || !G.pieces.length || !G.field.length) return;
 
-  // Alle Gruppen finden, die aus nur einem Teil bestehen
+  // Wie bisher nur einzeln liegende Teile wischen, keine verbundenen Gruppen.
   const singleGids = [];
   for (const [gid, group] of G.groups) {
     if (group.length === 1) singleGids.push(gid);
   }
-  if (singleGids.length === 0) {
+  $('#menuDropdown').classList.remove('show');
+  if (!singleGids.length) {
     toast('Keine einzelnen Teile auf dem Spielfeld');
     return;
   }
 
-  // Nur diese Einzelteile zurück in die Ablage
   const removed = new Set();
+  const ghosts = [];
+  const scale = G.view.scale;
+  const boardHeight = boardCanvas.clientHeight;
   for (const gid of singleGids) {
-    const g = G.groups.get(gid);
-    if (!g) continue;
-    for (const p of g) {
+    const group = G.groups.get(gid);
+    if (!group) continue;
+    for (const p of group) {
+      // Position und Drehung VOR dem logischen Entfernen sichern.
+      const x = G.view.x + ((p.renderX ?? p.x) + G.pw / 2) * scale;
+      const y = G.view.y + ((p.renderY ?? p.y) + G.ph / 2) * scale;
+      const width = (G.pw + 2 * G.T) * scale;
+      const height = (G.ph + 2 * G.T) * scale;
+      ghosts.push({
+        piece: p, canvas: p.canvas, x, y, width, height,
+        rot: (p.renderRot ?? p.rot) * Math.PI / 2,
+        drift: (Math.random() - 0.5) * 70,
+        spin: (Math.random() - 0.5) * 0.75,
+        drop: Math.max(0, boardHeight - y) + height + 60,
+        delay: Math.random() * 95,
+        duration: 480 + Math.random() * 100
+      });
+      cancelAnim(p);
       p.inField = false;
       p.group = null;
-      p.x = 0; p.y = 0;
+      p.x = 0;
+      p.y = 0;
+      p.sweeping = true;
       removed.add(p);
     }
     G.groups.delete(gid);
   }
-
-  // Feldreihenfolge bereinigen (Mehrteil-Gruppen bleiben drin)
   G.field = G.field.filter(p => !removed.has(p));
+  // nextGid bleibt unveraendert, damit neue Gruppen keine IDs wiederverwenden.
 
-  // nextGid NICHT zurücksetzen – sonst kollidieren neue Gruppen mit bestehenden GIDs
-
-  buildFooter();
-  requestRender();
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    // Systemeinstellung: Animation reduzieren. Teile direkt zurueckgeben.
+    for (const ghost of ghosts) ghost.piece.sweeping = false;
+    buildFooter();
+    requestRender();
+  } else {
+    broomSweep = {
+      ghosts,
+      startedAt: performance.now(),
+      totalDuration: Math.max(...ghosts.map(g => g.delay + g.duration))
+    };
+    $('#btnBroom').disabled = true;
+    requestRender();
+    broomSweepFrame = requestAnimationFrame(tickBroomSweep);
+  }
   saveGameThrottled();
 });
 
+function closeImageOverlay() {
+  $('#eyeOverlay').classList.remove('show');
+  $('#btnEye').focus({ preventScroll: true });
+}
 $('#btnEye').addEventListener('click', () => {
   if (!G.imageUrl) return;
   $('#eyeImg').src = G.imageUrl;
   $('#eyeOverlay').classList.add('show');
+  $('#eyeImg').focus({ preventScroll: true });
 });
-$('#eyeClose').addEventListener('click', () => $('#eyeOverlay').classList.remove('show'));
-$('#eyeOverlay').addEventListener('click', e => {
-  if (e.target.id === 'eyeOverlay') $('#eyeOverlay').classList.remove('show');
+// Klick auf das Bild oder auf den abgedunkelten Hintergrund schließt die Ansicht.
+$('#eyeOverlay').addEventListener('click', closeImageOverlay);
+$('#eyeImg').addEventListener('keydown', event => {
+  if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+    event.preventDefault();
+    closeImageOverlay();
+  }
 });
 
 $('#btnTimer').addEventListener('click', () => {
   $('#btnTimer').classList.toggle('hidden');
+});
+
+/* Zurück-Button im Game-Screen */
+$('#btnGameBack').addEventListener('click', () => goBackInApp('game', 'setup'));
+
+/* Dropdown öffnen/schließen */
+$('#btnMenu').addEventListener('click', e => {
+  e.stopPropagation();
+  $('#menuDropdown').classList.toggle('show');
+});
+document.addEventListener('click', e => {
+  const dd = $('#menuDropdown');
+  const mb = $('#btnMenu');
+  if (!dd.classList.contains('show')) return;
+  if (dd.contains(e.target) || mb === e.target || mb.contains(e.target)) return;
+  dd.classList.remove('show');
+});
+
+/* Zentrieren-Button */
+$('#btnCenter').addEventListener('click', () => {
+  centerView();
+  $('#menuDropdown').classList.remove('show');
+});
+
+/* Große Teile Toggle */
+function applyLargePieces(on) {
+  G.largePieces = on;
+  document.body.classList.toggle('large-pieces', on);
+  $('#btnLargePieces').classList.toggle('active', on);
+  puzzleSettings['large-pieces'] = !!on;
+  storePuzzleSettings();
+  if (G.imageId && G.imageEl) {
+    buildFooter();
+    requestRender();
+  }
+}
+$('#btnLargePieces').addEventListener('click', () => {
+  applyLargePieces(!G.largePieces);
+  $('#menuDropdown').classList.remove('show');
 });
 
 /* ============================================================
@@ -1304,6 +2515,15 @@ boardCanvas.addEventListener('pointerdown', e => {
   if (piece) {
     mode = 'piece';
     bringToFront(piece.group);
+    // Laufende Animationen dieser Gruppe sauber stoppen.
+    // q.x / q.y / q.rot sind bereits die logischen Zielwerte.
+    // renderRot ist ein Zwischenwert (z. B. 1.5) und darf NICHT übernommen werden.
+    const gp = G.groups.get(piece.group);
+    if (gp) {
+      for (const q of gp) {
+        if (q.anim) cancelAnim(q);
+      }
+    }
     dragInfo = {
       piece,
       gid: piece.group,
@@ -1363,8 +2583,10 @@ boardCanvas.addEventListener('pointermove', e => {
     const dy = ny - dragInfo.piece.y;
     if (dx || dy) {
       for (let i = 0; i < dragInfo.pieces.length; i++) {
-        dragInfo.pieces[i].x += dx;
-        dragInfo.pieces[i].y += dy;
+        const q = dragInfo.pieces[i];
+        q.x += dx;
+        q.y += dy;
+        if (q.anim) cancelAnim(q);
       }
       requestRender();
     }
@@ -1482,11 +2704,113 @@ setInterval(() => {
    Screens
    ============================================================ */
 let _objUrls = [];
-function showScreen(name) {
+const PUZZLE_HISTORY_ID = 'puzzle-v5';
+
+function showScreen(name, historyMode = 'push') {
+  // Keine animierten Einzelteile auf anderen Screens stehen lassen.
+  if (name !== 'game') finishBroomSweep(false);
+  const previous = document.body.dataset.screen;
+  if (previous !== name && historyMode !== 'none') {
+    const state = { ...history.state, puzzleApp: PUZZLE_HISTORY_ID, screen: name,
+      imageId: setupImage ? setupImage.id : null, pieceCount: setupPieceCount,
+      categoryFilter: name === 'start' ? activeCategory : null,
+      categoryFilterEntry: false };
+    try {
+      if (historyMode === 'replace') {
+        history.replaceState(state, '', location.href);
+      } else if (name === 'start' && activeCategory !== 'all') {
+        // Auch nach dem Spiel gibt es genau einen Zurück-Schritt zu „Alle“.
+        history.pushState({ ...state, categoryFilter: 'all' }, '', location.href);
+        history.pushState({ ...state, categoryFilter: activeCategory,
+          categoryFilterEntry: true }, '', location.href);
+      } else {
+        history.pushState(state, '', location.href);
+      }
+    } catch (err) { console.warn('History-Eintrag nicht möglich', err); }
+  }
   $$('.screen').forEach(s => s.classList.remove('active'));
   $('#screen-' + name).classList.add('active');
   document.body.dataset.screen = name;
+  $('#menuDropdown').classList.remove('show');
+  $('#eyeOverlay').classList.remove('show');
 }
+
+async function leaveGameForNavigation() {
+  finishBroomSweep();
+  G.running = false;
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  for (const p of G.pieces) cancelAnim(p);
+  await saveGame();
+}
+
+function goBackInApp(from, fallback) {
+  const state = history.state;
+  if (state && state.puzzleApp === PUZZLE_HISTORY_ID && state.screen === from) {
+    history.back();
+    return;
+  }
+  // Fallback, falls ein Browser keine History-API unterstützt.
+  (async () => {
+    if (from === 'game') await leaveGameForNavigation();
+    if (fallback === 'setup') await renderPieceCountList();
+    showScreen(fallback, 'replace');
+    if (fallback === 'start') await buildGallery();
+  })().catch(err => { console.error(err); toast('Zurück-Navigation fehlgeschlagen'); });
+}
+
+let navigationQueue = Promise.resolve();
+window.addEventListener('popstate', event => {
+  const state = event.state;
+  if (!state || state.puzzleApp !== PUZZLE_HISTORY_ID) return;
+  // Ereignisse in Reihenfolge verarbeiten, auch bei mehrfachem Zurück-Tippen.
+  navigationQueue = navigationQueue.then(async () => {
+    const desired = state.screen;
+    if (document.body.dataset.screen === 'game' && desired !== 'game') {
+      await leaveGameForNavigation();
+    }
+    if (desired === 'start') {
+      activeCategory = normalizeCategoryId(state.categoryFilter || 'all');
+      if (vaultLocked && isVaultCategoryId(activeCategory)) activeCategory = 'all';
+      showScreen('start', 'none');
+      await buildGallery();
+    } else if (desired === 'setup') {
+      if (!setupImage || (vaultLocked && isVaultCategoryId(setupImage.categoryId))) {
+        showScreen('start', 'replace');
+        await buildGallery();
+        return;
+      }
+      await loadCategories();
+      renderSetupCategorySelect();
+      await renderPieceCountList();
+      showScreen('setup', 'none');
+    } else if (desired === 'game') {
+      if (!setupImage || (vaultLocked && isVaultCategoryId(setupImage.categoryId))) {
+        showScreen('start', 'replace');
+        await buildGallery();
+        return;
+      }
+      if (G.imageId !== setupImage.id || !G.pieces.length ||
+          G.pieceCount !== state.pieceCount) {
+        const save = await idbGet('saves', setupImage.id + '|' + state.pieceCount);
+        await beginGame(setupImage, state.pieceCount, save, 'none');
+      } else if (G.groups.size === 1 && G.field.length === G.pieces.length) {
+        showScreen('win', 'replace');
+      } else {
+        showScreen('game', 'none');
+        G.timerBase = performance.now() - G.timer * 1000;
+        G.running = true;
+        requestRender();
+      }
+    } else if (desired === 'win') {
+      if (vaultLocked && (!G.imageEl || isVaultCategoryId(G.categoryId))) {
+        showScreen('start', 'replace');
+        await buildGallery();
+        return;
+      }
+      showScreen('win', 'none');
+    }
+  }).catch(err => { console.error(err); toast('Navigation fehlgeschlagen'); });
+});
 
 /* ============================================================
    Startbildschirm / Galerie
@@ -1506,94 +2830,419 @@ async function getSaveMap() {
   return map;
 }
 
+function totalGamesForImage(stats) {
+  if (!stats || typeof stats !== 'object') return 0;
+  return Object.values(stats).reduce((total, entry) => {
+    return total + (Number.isSafeInteger(entry?.games) && entry.games > 0 ? entry.games : 0);
+  }, 0);
+}
+
+let galleryBuildSerial = 0;
 async function buildGallery() {
-  const gallery = $('#gallery');
-  _objUrls.forEach(u => URL.revokeObjectURL(u));
-  _objUrls = [];
-  gallery.innerHTML = '';
+  const serial = ++galleryBuildSerial;
+  try {
+    await loadCategories();
+    const [allImages, saveMap] = await Promise.all([idbAll('images'), getSaveMap()]);
+    if (serial !== galleryBuildSerial) return;
 
-  let custom = [];
-  try { custom = await idbAll('images'); } catch (e) { custom = []; }
-  const saveMap = await getSaveMap();
+    const nextUrls = [];
+    const items = [];
+    // Standardbilder zuerst, danach hochgeladene Bilder; alle stammen aus images.
+    allImages.sort((a, b) => Number(!!b.builtin) - Number(!!a.builtin) ||
+      (a.created || 0) - (b.created || 0));
+    for (const record of allImages) {
+      const categoryId = normalizeCategoryId(record.categoryId || 'upload');
+      if (vaultLocked && isVaultCategoryId(categoryId)) continue;
+      if (activeCategory !== 'all' && activeCategory !== categoryId) continue;
 
-  const items = [];
-  for (const p of PRESETS) items.push({ id: p.id, name: p.name, src: p.src, preset: true });
-  for (const c of custom) {
-    const url = URL.createObjectURL(c.blob);
-    _objUrls.push(url);
-    items.push({ id: c.id, name: c.name || 'Bild', src: url, preset: false });
-  }
-
-  const frag = document.createDocumentFragment();
-  for (const it of items) {
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const img = document.createElement('img');
-    img.src = it.src;
-    img.alt = it.name;
-    img.loading = 'lazy';
-    img.onerror = () => { img.style.display = 'none'; };
-    card.appendChild(img);
-
-    const label = document.createElement('div');
-    label.className = 'label';
-    label.textContent = it.name;
-    card.appendChild(label);
-
-    const sv = saveMap.get(it.id);
-    if (sv && sv.best) {
-      const pct = Math.round((sv.best.progress || 0) * 100);
-      const badge = document.createElement('div');
-      badge.className = 'pct';
-      badge.textContent = pct + '%';
-      card.appendChild(badge);
-
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      const fill = document.createElement('i');
-      fill.style.width = pct + '%';
-      bar.appendChild(fill);
-      card.appendChild(bar);
+      let src = null;
+      if (record.blob instanceof Blob) {
+        src = URL.createObjectURL(record.blob);
+        nextUrls.push(src);
+      } else if (record.builtin && typeof record.src === 'string' && record.src) {
+        src = record.src;
+      }
+      if (!src) continue;
+      items.push({ id: record.id, name: record.name || 'Bild', src,
+        categoryId, stats: record.stats || {} });
     }
 
-    card.addEventListener('click', () => openSetup(it));
-    frag.appendChild(card);
+    const frag = document.createDocumentFragment();
+    for (const it of items) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.categoryId = it.categoryId;
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', it.name + ' öffnen');
+
+      const img = document.createElement('img');
+      img.src = it.src;
+      img.alt = it.name;
+      img.loading = 'lazy';
+      img.onerror = () => { img.style.display = 'none'; };
+      card.appendChild(img);
+
+      const completed = totalGamesForImage(it.stats);
+      if (completed > 0) {
+        const gamesBadge = document.createElement('div');
+        gamesBadge.className = 'games';
+        gamesBadge.textContent = '🎮 ' + completed;
+        gamesBadge.title = completed + ' gewertete Spiele insgesamt';
+        gamesBadge.setAttribute('aria-label', gamesBadge.title);
+        card.appendChild(gamesBadge);
+      }
+
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = it.name;
+      card.appendChild(label);
+
+      const sv = saveMap.get(it.id);
+      if (sv && sv.best) {
+        const pct = Math.round((sv.best.progress || 0) * 100);
+        const badge = document.createElement('div');
+        badge.className = 'pct';
+        badge.textContent = pct + '%';
+        card.appendChild(badge);
+
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const fill = document.createElement('i');
+        fill.style.width = pct + '%';
+        bar.appendChild(fill);
+        card.appendChild(bar);
+      }
+
+      card.addEventListener('click', () => openSetup(it).catch(console.error));
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openSetup(it).catch(console.error);
+        }
+      });
+      frag.appendChild(card);
+    }
+
+    const addCard = document.createElement('button');
+    addCard.type = 'button';
+    addCard.className = 'card add';
+    addCard.innerHTML = '<span class="plus">＋</span><span>Bild hinzufügen</span>';
+    addCard.addEventListener('click', () => $('#fileInput').click());
+    frag.appendChild(addCard);
+
+    // Erst nach komplettem Aufbau ersetzen und danach alte Blob-URLs freigeben.
+    const oldUrls = _objUrls;
+    $('#gallery').replaceChildren(frag);
+    _objUrls = nextUrls;
+    oldUrls.forEach(url => URL.revokeObjectURL(url));
+  } catch (err) {
+    console.error('Galerie konnte nicht geladen werden', err);
+    toast('Bildergalerie konnte nicht geladen werden');
   }
-
-  // "Hinzufügen"-Karte
-  const addCard = document.createElement('div');
-  addCard.className = 'card add';
-  addCard.innerHTML = '<div class="plus">＋</div><div>Bild hinzufügen</div>';
-  addCard.addEventListener('click', () => $('#fileInput').click());
-  frag.appendChild(addCard);
-
-  gallery.appendChild(frag);
 }
+
+$('#categoryFilter').addEventListener('change', async event => {
+  const selected = event.target.value;
+  if (selected === '__manage__') {
+    event.target.value = activeCategory;
+    await openCategoryManager();
+    return;
+  }
+  if (vaultLocked && isVaultCategoryId(selected)) {
+    event.target.value = activeCategory;
+    return;
+  }
+  const category = normalizeCategoryId(selected);
+  if (category === activeCategory) return;
+
+  // Für die Filterung auf der Startseite eine eigene History-Stufe anlegen.
+  // Beim Wechsel zwischen gefilterten Kategorien die Stufe nur aktualisieren:
+  // Ein einziges Browser-Zurück bringt die Ansicht immer zu „Alle“.
+  const state = history.state;
+  if (state?.puzzleApp === PUZZLE_HISTORY_ID && state.screen === 'start') {
+    try {
+      if (category === 'all' && state.categoryFilterEntry) {
+        history.back();
+        return;
+      }
+      if (category === 'all') {
+        history.replaceState({ ...state, categoryFilter: 'all',
+          categoryFilterEntry: false }, '', location.href);
+      } else if (state.categoryFilterEntry) {
+        history.replaceState({ ...state, categoryFilter: category,
+          categoryFilterEntry: true }, '', location.href);
+      } else {
+        history.replaceState({ ...state, categoryFilter: 'all',
+          categoryFilterEntry: false }, '', location.href);
+        history.pushState({ ...state, categoryFilter: category,
+          categoryFilterEntry: true }, '', location.href);
+      }
+    } catch (error) {
+      console.warn('Filter-History konnte nicht aktualisiert werden:', error);
+    }
+  }
+  activeCategory = category;
+  await buildGallery();
+});
+
+/* ============================================================
+   Dialog: Benutzerdefinierte Kategorien verwalten
+   ============================================================ */
+async function getCategoryImageCounts() {
+  const d = await db();
+  return new Promise((resolve, reject) => {
+    const counts = new Map();
+    const tx = d.transaction('images', 'readonly');
+    const req = tx.objectStore('images').index('categoryId').openKeyCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor) {
+        counts.set(cursor.key, (counts.get(cursor.key) || 0) + 1);
+        cursor.continue();
+      } else resolve(counts);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function openCategoryManager() {
+  try {
+    await loadCategories();
+    await renderCategoryManager();
+    $('#categoryOverlay').classList.add('show');
+    $('#categoryNewName').focus();
+  } catch (err) {
+    console.error(err);
+    toast('Kategorien konnten nicht geladen werden');
+  }
+}
+
+function closeCategoryManager() {
+  $('#categoryOverlay').classList.remove('show');
+  $('#categoryFilter').focus();
+}
+
+$('#categoryClose').addEventListener('click', closeCategoryManager);
+$('#categoryOverlay').addEventListener('click', event => {
+  if (event.target === $('#categoryOverlay')) closeCategoryManager();
+});
+document.addEventListener('keydown', event => {
+  if (!$('#categoryOverlay').classList.contains('show')) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeCategoryManager();
+  }
+});
+
+async function renderCategoryManager() {
+  const list = $('#categoryList');
+  const counts = await getCategoryImageCounts();
+  list.replaceChildren();
+  const own = categories.filter(cat => !cat.builtin);
+  if (!own.length) {
+    const empty = document.createElement('div');
+    empty.className = 'category-empty';
+    empty.textContent = 'Noch keine eigenen Kategorien vorhanden.';
+    list.appendChild(empty);
+  }
+  for (const cat of own) {
+    const row = document.createElement('div');
+    row.className = 'category-row';
+    const input = document.createElement('input');
+    input.value = cat.name;
+    input.maxLength = 50;
+    input.setAttribute('aria-label', 'Kategorie ' + cat.name + ' umbenennen');
+
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.textContent = 'Speichern';
+    save.setAttribute('aria-label', cat.name + ' umbenennen');
+    const rename = async () => {
+      const name = categoryNameValid(input.value, cat.id);
+      if (!name) return;
+      if (name === cat.name) return;
+      try {
+        save.disabled = true;
+        await idbPut('categories', { ...cat, name });
+        await loadCategories();
+        await buildGallery();
+        await renderCategoryManager();
+        toast('Kategorie umbenannt');
+      } catch (err) {
+        console.error(err);
+        toast('Umbenennen fehlgeschlagen');
+        save.disabled = false;
+      }
+    };
+    save.addEventListener('click', rename);
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); rename(); }
+    });
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'danger';
+    remove.textContent = 'Entfernen';
+    remove.setAttribute('aria-label', cat.name + ' und zugehörige Bilder entfernen');
+    remove.addEventListener('click', async () => {
+      const n = counts.get(cat.id) || 0;
+      const msg = `Kategorie „${cat.name}“ löschen? ${n} Bild${n === 1 ? '' : 'er'} und alle dazugehörigen Spielstände werden dauerhaft entfernt.`;
+      if (!confirm(msg)) return;
+      remove.disabled = true;
+      try {
+        const deleted = await deleteCategoryWithImages(cat.id);
+        if (setupImage && deleted.has(setupImage.id)) {
+          if (setupImageUrl) URL.revokeObjectURL(setupImageUrl);
+          setupImageUrl = null;
+          setupImage = null;
+        }
+        if (activeCategory === cat.id) activeCategory = 'all';
+        await loadCategories();
+        await buildGallery();
+        await renderCategoryManager();
+        toast(`Kategorie und ${deleted.size} Bild${deleted.size === 1 ? '' : 'er'} gelöscht`);
+      } catch (err) {
+        console.error(err);
+        toast('Kategorie konnte nicht gelöscht werden');
+        remove.disabled = false;
+      }
+    });
+    row.append(input, save, remove);
+    list.appendChild(row);
+  }
+}
+
+$('#categoryAddForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const field = $('#categoryNewName');
+  const name = categoryNameValid(field.value);
+  if (!name) return;
+  const button = $('#categoryAddForm button[type="submit"]');
+  button.disabled = true;
+  try {
+    await idbPut('categories', {
+      id: 'cat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      name, builtin: false, created: Date.now()
+    });
+    field.value = '';
+    await loadCategories();
+    await buildGallery();
+    await renderCategoryManager();
+    toast('Kategorie hinzugefügt');
+    field.focus();
+  } catch (err) {
+    console.error(err);
+    toast('Kategorie konnte nicht gespeichert werden');
+  } finally {
+    button.disabled = false;
+  }
+});
 
 /* ============================================================
    Setup-Bildschirm
    ============================================================ */
-let setupImage = null;   // { id, name, src, preset }
+let setupImage = null;   // { id, name, src, categoryId, preset }
+let setupImageUrl = null; // Eigenes Blob-URL: unabhängig vom Galerie-Neuaufbau.
 let setupPieceCount = 100;
 
+function renderSetupCategorySelect() {
+  const select = $('#setupCategory');
+  select.replaceChildren();
+  if (!setupImage) return;
+  if (setupImage.preset) {
+    select.add(new Option('Standard', 'standard'));
+    select.value = 'standard';
+    select.disabled = true; // Standardbilder können nicht anders zugeordnet werden.
+    return;
+  }
+  for (const cat of categories) {
+    if (cat.id !== 'standard') select.add(new Option(cat.name, cat.id));
+  }
+  select.value = categoryById(setupImage.categoryId) && setupImage.categoryId !== 'standard'
+    ? normalizeCategoryId(setupImage.categoryId) : 'upload';
+  select.disabled = false;
+}
+
 async function openSetup(item) {
-  setupImage = item;
-  $('#setupTitle').textContent = item.name;
-  $('#setupImg').src = item.src;
-  $('#btnDeleteImg').textContent = item.preset ? 'Spielstände löschen' : 'Bild löschen';
+  if (vaultLocked && isVaultCategoryId(item.categoryId)) {
+    toast('Tresor ist geschlossen');
+    return;
+  }
+  if (setupImageUrl) URL.revokeObjectURL(setupImageUrl);
+  setupImageUrl = null;
+  const stored = await idbGet('images', item.id);
+  if (!stored) { toast('Bild ist nicht mehr vorhanden'); await buildGallery(); return; }
+  if (vaultLocked && isVaultCategoryId(stored.categoryId)) {
+    toast('Tresor ist geschlossen');
+    return;
+  }
+  let src;
+  if (stored.blob instanceof Blob) {
+    setupImageUrl = URL.createObjectURL(stored.blob);
+    src = setupImageUrl;
+  } else if (stored.builtin && typeof stored.src === 'string' && stored.src) {
+    src = stored.src;
+  } else {
+    toast('Bilddaten fehlen');
+    return;
+  }
+  setupImage = { id: stored.id, name: stored.name || 'Bild', src,
+    preset: !!stored.builtin, categoryId: normalizeCategoryId(stored.categoryId || 'upload'),
+    stats: stored.stats || {} };
+  await loadCategories();
+  if (!setupImage || (vaultLocked && isVaultCategoryId(setupImage.categoryId))) return;
+  $('#setupTitle').textContent = setupImage.name;
+  $('#setupImg').src = setupImage.src;
+  $('#btnDeleteImg').textContent = 'Bild löschen';
+  // Jedes neu geöffnete Setup startet mit beiden Optionen aktiviert.
+  $('#setupShuffle').checked = SHUFFLE_ON_START;
+  $('#setupRotate').checked = RANDOM_ROTATE_ON_START;
+  renderSetupCategorySelect();
   await renderPieceCountList();
+  if (!setupImage || (vaultLocked && isVaultCategoryId(setupImage.categoryId))) return;
   showScreen('setup');
 }
 
+$('#setupCategory').addEventListener('change', async event => {
+  if (!setupImage || setupImage.preset) return;
+  const select = event.target;
+  const chosen = select.value;
+  if (chosen === 'standard' || (vaultLocked && isVaultCategoryId(chosen)) || !categoryById(chosen)) {
+    select.value = setupImage.categoryId;
+    return;
+  }
+  select.disabled = true;
+  try {
+    const stored = await idbGet('images', setupImage.id);
+    if (!stored) throw new Error('Bild nicht gefunden');
+    stored.categoryId = chosen;
+    await idbPut('images', stored);
+    setupImage.categoryId = chosen;
+    toast('Bildkategorie geändert');
+  } catch (err) {
+    console.error(err);
+    select.value = setupImage.categoryId;
+    toast('Kategorie konnte nicht geändert werden');
+  } finally {
+    select.disabled = false;
+  }
+});
+
 async function renderPieceCountList() {
+  if (!setupImage) return;
   const list = $('#pcList');
-  list.innerHTML = '';
-  const saveMap = await getSaveMap();
-  const entry = saveMap.get(setupImage.id);
+  list.replaceChildren();
+  const imageId = setupImage.id;
+  const [saveMap, stored] = await Promise.all([getSaveMap(), idbGet('images', imageId)]);
+  if (!setupImage || setupImage.id !== imageId ||
+      (vaultLocked && isVaultCategoryId(setupImage.categoryId))) return;
+  if (!stored) { toast('Bild ist nicht mehr vorhanden'); return; }
+  setupImage.stats = stored.stats || {};
+  const entry = saveMap.get(imageId);
   const byPc = entry ? entry.byPc : new Map();
 
-  // Vorauswahl: erster Wert mit Spielstand, sonst 100
+  // Vorauswahl: erster Wert mit laufendem Spielstand, sonst 100.
   if (!byPc.has(setupPieceCount)) {
     let found = null;
     for (const pc of PIECE_COUNTS) { if (byPc.has(pc)) { found = pc; break; } }
@@ -1601,19 +3250,43 @@ async function renderPieceCountList() {
   }
 
   for (const pc of PIECE_COUNTS) {
-    const b = document.createElement('button');
-    b.className = 'pc-btn';
-    b.dataset.pc = pc;
-    const s = byPc.get(pc);
-    b.innerHTML = `<span>${pc}</span>` +
-      (s ? `<span class="sub">${Math.round((s.progress || 0) * 100)}%</span>` : `<span class="sub">&nbsp;</span>`);
-    if (pc === setupPieceCount) b.classList.add('active');
-    b.addEventListener('click', () => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pc-btn';
+    button.dataset.pc = pc;
+    const number = document.createElement('span');
+    number.textContent = pc;
+    const sub = document.createElement('span');
+    sub.className = 'sub';
+    const save = byPc.get(pc);
+    if (save) {
+      const progress = document.createElement('span');
+      progress.className = 'pc-stat';
+      progress.textContent = Math.round((save.progress || 0) * 100) + '% Fortschritt';
+      sub.appendChild(progress);
+      button.title = pc + ' Teile: laufendes Puzzle, ' + progress.textContent;
+    } else {
+      const stat = setupImage.stats[String(pc)];
+      const games = Number.isSafeInteger(stat?.games) && stat.games >= 0 ? stat.games : 0;
+      const best = Number.isFinite(stat?.bestTime) && stat.bestTime >= 0
+        ? fmtTime(stat.bestTime) : '–';
+      const bestLabel = document.createElement('span');
+      bestLabel.className = 'pc-stat';
+      bestLabel.textContent = 'Best: ' + best;
+      const gamesLabel = document.createElement('span');
+      gamesLabel.className = 'pc-stat';
+      gamesLabel.textContent = games + (games === 1 ? ' Spiel' : ' Spiele');
+      sub.append(bestLabel, gamesLabel);
+      button.title = `${pc} Teile: Highscore ${best}, ${gamesLabel.textContent}`;
+    }
+    button.append(number, sub);
+    if (pc === setupPieceCount) button.classList.add('active');
+    button.addEventListener('click', () => {
       setupPieceCount = pc;
       $$('#pcList .pc-btn').forEach(x => x.classList.toggle('active', +x.dataset.pc === pc));
       updateSetupButtons(byPc);
     });
-    list.appendChild(b);
+    list.appendChild(button);
   }
   updateSetupButtons(byPc);
 }
@@ -1624,7 +3297,7 @@ function updateSetupButtons(byPc) {
   $('#btnStart').textContent = has ? 'Neu starten' : 'Starten';
 }
 
-$('#setupBack').addEventListener('click', () => { showScreen('start'); buildGallery(); });
+$('#setupBack').addEventListener('click', () => goBackInApp('setup', 'start'));
 
 $('#btnStart').addEventListener('click', async () => {
   await beginGame(setupImage, setupPieceCount, null);
@@ -1637,40 +3310,50 @@ $('#btnResume').addEventListener('click', async () => {
 
 $('#btnDeleteImg').addEventListener('click', async () => {
   if (!setupImage) return;
-  if (setupImage.preset) {
-    if (!confirm('Alle Spielstände für dieses Bild löschen?')) return;
-    const saves = await idbAll('saves');
-    for (const s of saves) {
-      if (s.imageId === setupImage.id) await idbDelete('saves', s.key);
+  if (!confirm('Dieses Bild und alle laufenden Spielstände dauerhaft löschen?')) return;
+  const imageId = setupImage.id;
+  const button = $('#btnDeleteImg');
+  button.disabled = true;
+  try {
+    await deleteImageAndSaves(imageId);
+    if (setupImage?.id === imageId) {
+      if (setupImageUrl) URL.revokeObjectURL(setupImageUrl);
+      setupImageUrl = null;
+      setupImage = null;
+      $('#setupImg').removeAttribute('src');
     }
-    toast('Spielstände gelöscht');
-  } else {
-    if (!confirm('Dieses Bild und alle Spielstände löschen?')) return;
-    const saves = await idbAll('saves');
-    for (const s of saves) {
-      if (s.imageId === setupImage.id) await idbDelete('saves', s.key);
-    }
-    await idbDelete('images', setupImage.id);
     toast('Bild gelöscht');
+    goBackInApp('setup', 'start');
+  } catch (error) {
+    console.error('Bild konnte nicht gelöscht werden:', error);
+    toast('Bild konnte nicht gelöscht werden');
+  } finally {
+    button.disabled = false;
   }
-  showScreen('start');
-  buildGallery();
 });
 
 /* ============================================================
    Spiel starten
    ============================================================ */
-async function beginGame(item, pieceCount, save) {
+async function beginGame(item, pieceCount, save, historyMode = 'push') {
+  finishBroomSweep(false);
+  if (!item || (vaultLocked && isVaultCategoryId(item.categoryId))) {
+    toast('Tresor ist geschlossen');
+    return;
+  }
   showLoading(true, 'Puzzle wird erstellt…');
   await sleep(40);
 
   try {
     const imgEl = await loadImageEl(item.src);
+    if (vaultLocked && isVaultCategoryId(item.categoryId)) return;
     G.imageId = item.id;
     G.imageName = item.name;
     G.imageEl = imgEl;
     G.imageUrl = item.src;
+    G.categoryId = normalizeCategoryId(item.categoryId);
     G.pieceCount = pieceCount;
+    G.winHandled = false;
 
     let rows, cols, worldW, worldH, hE = null, vE = null;
 
@@ -1689,13 +3372,23 @@ async function beginGame(item, pieceCount, save) {
 
     await buildPuzzle(imgEl, rows, cols, worldW, worldH, hE, vE);
 
+    // Fortsetzen: die ursprünglichen Startoptionen beibehalten, auch wenn
+    // die Schalter im Setup inzwischen geändert wurden.
+    // Alte v5-Spielstände ohne diese Eigenschaften wurden immer mit beiden
+    // Optionen aktiviert gestartet.
+    const hasSavedPieces = !!(save && Array.isArray(save.pieces) &&
+      save.pieces.length === G.pieces.length);
+    G.shuffleOnStart = hasSavedPieces ? save.shuffleOnStart !== false : $('#setupShuffle').checked;
+    G.randomRotateOnStart = hasSavedPieces ? save.randomRotateOnStart !== false : $('#setupRotate').checked;
+    G.statEligible = G.shuffleOnStart && G.randomRotateOnStart;
+
     // Zustand wiederherstellen
     G.field = [];
     G.groups = new Map();
     G.nextGid = 1;
     let maxGid = 0;
 
-    if (save && save.pieces && save.pieces.length === G.pieces.length) {
+    if (hasSavedPieces) {
       for (const sp of save.pieces) {
         const p = G.grid[sp.r] && G.grid[sp.r][sp.c];
         if (!p) continue;
@@ -1717,14 +3410,19 @@ async function beginGame(item, pieceCount, save) {
       G.timer = save.time || 0;
     } else {
       G.timer = 0;
-      randomizePieces();   // Teile mischen + zufällig drehen
+      randomizePieces(G.shuffleOnStart, G.randomRotateOnStart);
     }
 
+    // Bei einem zwischenzeitlich geschlossenen Tresor nicht mehr anzeigen.
+    if (vaultLocked && isVaultCategoryId(item.categoryId)) {
+      concealVaultContent();
+      return;
+    }
     // Footer aufbauen
     buildFooter();
 
     // View
-    showScreen('game');
+    showScreen('game', historyMode);
     await sleep(30);
     fitView();
     requestRender();
@@ -1738,8 +3436,9 @@ async function beginGame(item, pieceCount, save) {
     showLoading(false);
   } catch (err) {
     console.error(err);
-    showLoading(false);
     toast('Fehler: ' + (err.message || 'Unbekannt'));
+  } finally {
+    showLoading(false);
   }
 }
 
@@ -1765,11 +3464,14 @@ async function addImageFromBlob(blob, name) {
       blob: proc.blob,
       width: proc.width,
       height: proc.height,
-      created: Date.now()
+      categoryId: uploadCategoryId(),
+      builtin: false,
+      created: Date.now(),
+      stats: {}
     };
     await idbPut('images', rec);
     await buildGallery();
-    toast('Bild hinzugefügt');
+    toast('Bild zu „' + (categoryById(rec.categoryId)?.name || 'Upload') + '“ hinzugefügt');
   } catch (e) {
     console.error(e);
     toast('Bild konnte nicht gespeichert werden');
@@ -1893,7 +3595,11 @@ if (window.ResizeObserver) {
    Vor dem Verlassen speichern
    ============================================================ */
 window.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') saveGame();
+  if (document.visibilityState === 'hidden') {
+    // requestAnimationFrame wird im Hintergrund angehalten: Animation abschliessen.
+    finishBroomSweep();
+    saveGame();
+  }
 });
 window.addEventListener('pagehide', () => { saveGame(); });
 window.addEventListener('beforeunload', () => { saveGame(); });
@@ -1902,7 +3608,21 @@ window.addEventListener('beforeunload', () => { saveGame(); });
    Start
    ============================================================ */
 document.body.dataset.screen = 'start';
-buildGallery().catch(e => console.error(e));
+// Für Setup/Game neue History-Einträge unter derselben URL erzeugen.
+try {
+  history.replaceState({ ...history.state, puzzleApp: PUZZLE_HISTORY_ID,
+    screen: 'start', imageId: null, pieceCount: setupPieceCount,
+    categoryFilter: 'all', categoryFilterEntry: false }, '', location.href);
+} catch (err) { console.warn('History konnte nicht initialisiert werden', err); }
+db().then(() => buildGallery()).catch(error => {
+  console.error('Puzzle-Datenbank konnte nicht initialisiert werden:', error);
+  toast('Datenbank nicht verfügbar: ' + (error.message || 'Zugriff fehlgeschlagen'), 5500);
+});
+
+/* Große Teile Einstellung wiederherstellen */
+if (puzzleSettings['large-pieces']) {
+  applyLargePieces(true);
+}
 
 /* ============================================================
    PWA: Service Worker + Installations-Prompt
