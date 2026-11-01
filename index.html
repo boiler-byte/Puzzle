@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Puzzle v10: ZIP-Bildimport mit automatischer Kategoriezuordnung -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -347,11 +348,11 @@ body.large-pieces .footer-grid{
   </div>
   <div class="gallery" id="gallery"></div>
   <div class="addbar">
-    <button id="btnAddFile">＋ Bild hinzufügen</button>
+    <button id="btnAddFile">＋ Bild / ZIP hinzufügen</button>
     <button id="btnCamera" type="button">📷 Direkt von Kamera</button>
     <button id="btnPaste">📋 Aus Zwischenablage</button>
   </div>
-  <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/*" multiple hidden>
+  <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/*,.zip,application/zip,application/x-zip-compressed" multiple hidden>
   <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
 </section>
 
@@ -517,7 +518,7 @@ body.large-pieces .footer-grid{
 
 <div id="loading"><div class="spinner"></div><div id="loadingText">Puzzle wird erstellt…</div></div>
 <div id="toast"></div>
-<div class="drop-hint" id="dropHint">Bild hier ablegen</div>
+<div class="drop-hint" id="dropHint">Bilder oder ZIP hier ablegen</div>
 
 <script>
 "use strict";
@@ -1231,9 +1232,15 @@ async function loadCategories() {
   return categories;
 }
 
+// Nur diese Kategorien duerfen als direktes Import-Ziel dienen.
+function selectedUploadCategory() {
+  const category = categoryById(activeCategory);
+  return category && category.id !== 'standard' &&
+    !(isVaultCategoryId(category.id) && vaultLocked) ? category : null;
+}
+
 function uploadCategoryId() {
-  return activeCategory !== 'all' && activeCategory !== 'standard' && categoryById(activeCategory)
-    ? activeCategory : 'upload';
+  return selectedUploadCategory()?.id || 'upload';
 }
 
 /* Löschen als eine Transaktion: Bilddateien, Spielstände und Kategorie. */
@@ -2966,7 +2973,7 @@ async function buildGallery() {
     const addCard = document.createElement('button');
     addCard.type = 'button';
     addCard.className = 'card add';
-    addCard.innerHTML = '<span class="plus">＋</span><span>Bild hinzufügen</span>';
+    addCard.innerHTML = '<span class="plus">＋</span><span>Bild / ZIP hinzufügen</span>';
     addCard.addEventListener('click', () => $('#fileInput').click());
     frag.appendChild(addCard);
 
@@ -3558,6 +3565,288 @@ async function addImageFromBlob(blob, name) {
   }
 }
 
+/* ============================================================
+   ZIP-Import: Standard-ZIP mit gespeicherten oder DEFLATE-Dateien.
+   Nutzt die integrierte DecompressionStream-API: kein CDN erforderlich.
+   Es werden nur Rasterbilder entpackt, mit Grenzen gegen ZIP-Bomben.
+   ============================================================ */
+const ZIP_IMAGE_MIMES = Object.freeze({
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+  webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp',
+  avif: 'image/avif', heic: 'image/heic', heif: 'image/heif'
+});
+const ZIP_MAX_ARCHIVE_BYTES = 160 * 1024 * 1024;
+const ZIP_MAX_IMAGE_BYTES = 45 * 1024 * 1024;
+const ZIP_MAX_TOTAL_BYTES = 450 * 1024 * 1024;
+const ZIP_MAX_ENTRIES = 6000;
+const ZIP_MAX_IMAGES = 1500;
+
+function isZipFile(file) {
+  return /\.zip$/i.test(file.name || '') ||
+    ['application/zip', 'application/x-zip-compressed'].includes(file.type);
+}
+
+function zipImageDetails(path) {
+  // Auch Bilder in Unterverzeichnissen importieren, Apple-Metadaten ignorieren.
+  const parts = path.replace(/\\/g, '/').split('/');
+  if (parts.some(part => part === '__MACOSX')) return null;
+  const basename = parts[parts.length - 1];
+  if (!basename || basename.startsWith('.')) return null;
+  const match = /^(.+)\.([^.]+)$/.exec(basename);
+  if (!match) return null;
+  const mime = ZIP_IMAGE_MIMES[match[2].toLowerCase()];
+  return mime ? { name: match[1], mime } : null;
+}
+
+// CP437 ist die klassische ZIP-Dateinamencodierung ohne UTF-8-Flag.
+const ZIP_CP437 = "\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00a2\u00a3\u00a5\u20a7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u2310\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u00df\u0393\u03c0\u03a3\u03c3\u00b5\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u03c6\u03b5\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u00a0";
+function decodeZipFilename(bytes, flags) {
+  try {
+    // Viele ZIP-Programme speichern UTF-8 auch ohne gesetztes UTF-8-Flag.
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch (_) {
+    return Array.from(bytes, byte => byte < 128 ? String.fromCharCode(byte) :
+      ZIP_CP437[byte - 128]).join('');
+  }
+}
+
+async function listZipImages(file) {
+  if (file.size > ZIP_MAX_ARCHIVE_BYTES) {
+    throw new Error('ZIP ist zu groß (maximal 160 MB).');
+  }
+  const raw = await file.arrayBuffer();
+  const data = new Uint8Array(raw);
+  const view = new DataView(raw);
+  if (data.length < 22) throw new Error('Keine gültige ZIP-Datei.');
+
+  // End of Central Directory finden. ZIP-Kommentare dürfen bis zu 65535 Byte lang sein.
+  let end = -1;
+  for (let pos = data.length - 22; pos >= Math.max(0, data.length - 22 - 65535); pos--) {
+    if (view.getUint32(pos, true) === 0x06054b50 &&
+        pos + 22 + view.getUint16(pos + 20, true) === data.length) {
+      end = pos;
+      break;
+    }
+  }
+  if (end < 0) throw new Error('ZIP-Verzeichnis nicht gefunden.');
+  if (view.getUint16(end + 4, true) !== 0 || view.getUint16(end + 6, true) !== 0 ||
+      view.getUint16(end + 8, true) !== view.getUint16(end + 10, true)) {
+    throw new Error('Mehrteilige ZIP-Archive werden nicht unterstützt.');
+  }
+  const count = view.getUint16(end + 10, true);
+  const directorySize = view.getUint32(end + 12, true);
+  const directoryOffset = view.getUint32(end + 16, true);
+  if (count === 65535 || directorySize === 0xffffffff || directoryOffset === 0xffffffff) {
+    throw new Error('ZIP64-Archive werden nicht unterstützt.');
+  }
+  if (count > ZIP_MAX_ENTRIES) throw new Error('Das ZIP enthält zu viele Dateien.');
+  if (directoryOffset + directorySize > end) throw new Error('ZIP-Verzeichnis ist beschädigt.');
+
+  let offset = directoryOffset;
+  let totalBytes = 0;
+  let skipped = 0;
+  const images = [];
+  for (let i = 0; i < count; i++) {
+    if (offset + 46 > directoryOffset + directorySize ||
+        view.getUint32(offset, true) !== 0x02014b50) {
+      throw new Error('ZIP-Dateiliste ist beschädigt.');
+    }
+    const flags = view.getUint16(offset + 8, true);
+    const method = view.getUint16(offset + 10, true);
+    const packed = view.getUint32(offset + 20, true);
+    const unpacked = view.getUint32(offset + 24, true);
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localOffset = view.getUint32(offset + 42, true);
+    const next = offset + 46 + nameLength + extraLength + commentLength;
+    if (next > directoryOffset + directorySize) {
+      throw new Error('ZIP-Dateiname ist beschädigt.');
+    }
+    const filename = decodeZipFilename(data.subarray(offset + 46,
+      offset + 46 + nameLength), flags);
+    offset = next;
+    const info = zipImageDetails(filename);
+    if (!info) continue;
+    // Verschlüsselte oder unbekannte Kompressionsarten nicht als Bild behandeln.
+    if ((flags & 1) !== 0 || ![0, 8].includes(method) ||
+        !unpacked || unpacked > ZIP_MAX_IMAGE_BYTES ||
+        (method === 0 && packed !== unpacked)) {
+      skipped++;
+      continue;
+    }
+    if (images.length >= ZIP_MAX_IMAGES) {
+      throw new Error('Das ZIP enthält mehr als 1500 Bilder.');
+    }
+    totalBytes += unpacked;
+    if (totalBytes > ZIP_MAX_TOTAL_BYTES) {
+      throw new Error('Die Bilder im ZIP sind insgesamt zu groß.');
+    }
+    if (localOffset + 30 > directoryOffset ||
+        view.getUint32(localOffset, true) !== 0x04034b50) {
+      throw new Error('ZIP-Bilddaten sind beschädigt.');
+    }
+    const dataOffset = localOffset + 30 + view.getUint16(localOffset + 26, true) +
+      view.getUint16(localOffset + 28, true);
+    if (dataOffset + packed > directoryOffset) {
+      throw new Error('ZIP-Bilddaten überschreiten die Archivgrenze.');
+    }
+    images.push({ ...info, filename, method, packed, unpacked, dataOffset });
+  }
+  return { images, skipped };
+}
+
+async function extractZipImage(file, entry) {
+  const contents = file.slice(entry.dataOffset, entry.dataOffset + entry.packed);
+  if (entry.method === 0) return contents.slice(0, contents.size, entry.mime);
+
+  let stream;
+  try {
+    stream = contents.stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  } catch (error) {
+    throw new Error('Dieser Browser unterstützt das Entpacken von ZIP-Bildern nicht.');
+  }
+  // Nur die im ZIP angegebenen maximal 45 MB pro Bild in den Speicher laden.
+  const output = new Uint8Array(entry.unpacked);
+  const reader = stream.getReader();
+  let used = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (used + value.byteLength > output.byteLength) {
+        throw new Error('ZIP-Bild ist größer als angegeben.');
+      }
+      output.set(value, used);
+      used += value.byteLength;
+    }
+  } catch (error) {
+    try { await reader.cancel(); } catch (_) {}
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+  if (used !== output.length) throw new Error('ZIP-Bild ist unvollständig.');
+  return new Blob([output], { type: entry.mime });
+}
+
+function zipDestination(file) {
+  const selected = selectedUploadCategory();
+  if (selected) return { category: selected, create: false };
+
+  // .zip entfernen, Kategorienamen wie bei der manuellen Anlage begrenzen.
+  const fullName = (file.name || '').replace(/\.zip$/i, '').trim().replace(/\s+/g, ' ');
+  const name = fullName.slice(0, 50).trim();
+  if (!name) throw new Error('Die ZIP-Datei benötigt einen gültigen Namen.');
+  const existing = [...categories, ...BUILTIN_CATEGORIES].find(cat =>
+    cat.name.toLocaleLowerCase('de') === name.toLocaleLowerCase('de'));
+  if (existing) {
+    if (existing.id === 'standard' || (isVaultCategoryId(existing.id) && vaultLocked)) {
+      throw new Error('„' + name + '“ ist keine verfügbare Upload-Kategorie. ' +
+        'Bitte ZIP umbenennen oder eine andere Kategorie auswählen.');
+    }
+    return { category: existing, create: false };
+  }
+  return { category: {
+    id: 'cat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name, builtin: false, created: Date.now()
+  }, create: true };
+}
+
+async function importZipImages(file) {
+  showLoading(true, 'ZIP-Datei wird geprüft…');
+  let imported = 0;
+  let failed = 0;
+  let destination = null;
+  let created = false;
+  try {
+    const { images, skipped } = await listZipImages(file);
+    if (!images.length) {
+      toast('Keine importierbaren Bilder in „' + file.name + '“ gefunden.', 4000);
+      return;
+    }
+    destination = zipDestination(file);
+    // Ein gesperrter Tresor darf auch während eines laufenden Imports kein Ziel sein.
+    if (isVaultCategoryId(destination.category.id) && vaultLocked) {
+      throw new Error('Tresor ist gesperrt.');
+    }
+    if (images.some(entry => entry.method === 8)) {
+      try {
+        new DecompressionStream('deflate-raw');
+      } catch (_) {
+        throw new Error('ZIP-Entpacken wird von diesem Browser nicht unterstützt. Bitte aktualisieren.');
+      }
+    }
+    for (let i = 0; i < images.length; i++) {
+      const entry = images[i];
+      showLoading(true, `ZIP: Bild ${i + 1} von ${images.length} wird gespeichert…`);
+      try {
+        const blob = await extractZipImage(file, entry);
+        const processed = await processImageBlob(blob);
+        if (isVaultCategoryId(destination.category.id) && vaultLocked) {
+          throw new Error('Tresor wurde gesperrt.');
+        }
+        if (destination.create && !created) {
+          await idbPut('categories', destination.category);
+          created = true;
+        }
+        await idbPut('images', {
+          id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+          name: entry.name,
+          blob: processed.blob,
+          width: processed.width,
+          height: processed.height,
+          categoryId: destination.category.id,
+          builtin: false,
+          created: Date.now(),
+          stats: {}
+        });
+        imported++;
+      } catch (error) {
+        console.warn('ZIP-Bild übersprungen:', entry.filename, error);
+        failed++;
+        if (isVaultCategoryId(destination.category.id) && vaultLocked) break;
+      }
+      if (i % 5 === 0) await sleep(0);
+    }
+    if (imported) {
+      await buildGallery(); // Aktualisiert auch die neu angelegte Kategorie im Filter.
+      const notImported = failed + skipped;
+      toast(`${imported} Bild${imported === 1 ? '' : 'er'} in „${destination.category.name}“ importiert` +
+        (notImported ? ` (${notImported} übersprungen)` : ''), 5000);
+    } else {
+      toast('Kein Bild aus „' + file.name + '“ konnte importiert werden.', 4500);
+    }
+  } catch (error) {
+    console.error('ZIP-Import fehlgeschlagen:', error);
+    if (imported) await buildGallery();
+    toast((error.message || 'ZIP konnte nicht gelesen werden.') +
+      (imported ? ` (${imported} Bilder bereits importiert)` : ''), 5000);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function addFiles(files) {
+  let rejected = 0;
+  for (const file of files) {
+    if (isZipFile(file)) {
+      await importZipImages(file);
+    } else {
+      const info = zipImageDetails(file.name || '');
+      if (file.type.startsWith('image/') || info) {
+        // Einige Geräte liefern trotz Bild-Dateiendung keinen MIME-Typ.
+        const blob = file.type.startsWith('image/') ? file :
+          file.slice(0, file.size, info.mime);
+        await addImageFromBlob(blob, (file.name || 'Bild').replace(/\.[^.]+$/, ''));
+      } else {
+        rejected++;
+      }
+    }
+  }
+  if (rejected) toast(`${rejected} nicht unterstützte Datei${rejected === 1 ? '' : 'en'} übersprungen`);
+}
+
 $('#btnAddFile').addEventListener('click', () => $('#fileInput').click());
 $('#btnCamera').addEventListener('click', () => $('#cameraInput').click());
 $('#cameraInput').addEventListener('change', async event => {
@@ -3570,9 +3859,7 @@ $('#cameraInput').addEventListener('change', async event => {
 $('#fileInput').addEventListener('change', async e => {
   const files = Array.from(e.target.files || []);
   e.target.value = '';
-  for (const f of files) {
-    await addImageFromBlob(f, f.name.replace(/\.[^.]+$/, ''));
-  }
+  await addFiles(files);
 });
 
 $('#btnPaste').addEventListener('click', async () => {
@@ -3641,11 +3928,7 @@ window.addEventListener('drop', async e => {
   dragCounter = 0;
   $('#dropHint').classList.remove('show');
   const files = Array.from(e.dataTransfer.files || []);
-  for (const f of files) {
-    if (f.type.startsWith('image/')) {
-      await addImageFromBlob(f, f.name.replace(/\.[^.]+$/, ''));
-    }
-  }
+  await addFiles(files);
 });
 
 /* ============================================================
