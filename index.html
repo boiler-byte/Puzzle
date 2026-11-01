@@ -218,6 +218,7 @@ select{font-family:inherit;font-size:14px;background:var(--panel);color:var(--fg
 .category-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
   padding:9px;border:1px solid var(--border);border-radius:11px;background:var(--panel2);}
 .category-row input{flex:1 1 140px;}
+.category-fixed-name{flex:1 1 140px;font-size:14px;font-weight:700;padding:9px 3px;}
 .category-row button{padding:9px 10px;}
 .category-empty{padding:16px 8px;text-align:center;color:var(--muted);font-size:13px;}
 @media(max-width:400px){.category-dialog{padding:14px;}.category-row button{font-size:12px;}}
@@ -347,9 +348,11 @@ body.large-pieces .footer-grid{
   <div class="gallery" id="gallery"></div>
   <div class="addbar">
     <button id="btnAddFile">＋ Bild hinzufügen</button>
+    <button id="btnCamera" type="button">📷 Direkt von Kamera</button>
     <button id="btnPaste">📋 Aus Zwischenablage</button>
   </div>
   <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/*" multiple hidden>
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
 </section>
 
 <!-- ================= SETUP ================= -->
@@ -443,14 +446,14 @@ body.large-pieces .footer-grid{
        aria-label="Bildansicht schließen">
 </div>
 
-<!-- Kategorien: Nur benutzerdefinierte Einträge sind editierbar. -->
+<!-- Kategorien: Feste Einträge können nur von ihren Bildern befreit werden. -->
 <div class="overlay" id="categoryOverlay" role="presentation">
   <div class="category-dialog" role="dialog" aria-modal="true" aria-labelledby="categoryDialogTitle">
     <div class="category-dialog-header">
       <h2 id="categoryDialogTitle">Kategorien verwalten</h2>
       <button class="icon-btn" id="categoryClose" aria-label="Dialog schließen">✕</button>
     </div>
-    <p>Feste Kategorien können nicht bearbeitet werden. Beim Entfernen einer eigenen Kategorie werden auch ihre Bilder und Spielstände gelöscht.</p>
+    <p>Feste Kategorien können nicht umbenannt oder entfernt werden. Ihre Bilder können samt Spielständen gelöscht werden. Beim Entfernen einer eigenen Kategorie werden auch ihre Bilder und Spielstände gelöscht.</p>
     <form class="category-add" id="categoryAddForm">
       <input id="categoryNewName" type="text" maxlength="50" autocomplete="off"
              aria-label="Name der neuen Kategorie" placeholder="Neue Kategorie" required>
@@ -1263,6 +1266,42 @@ async function deleteCategoryWithImages(categoryId) {
     };
     tx.oncomplete = () => resolve(deletedImageIds);
     tx.onerror = () => reject(tx.error || new Error('Datenbankfehler'));
+    tx.onabort = () => reject(tx.error || new Error('Löschen abgebrochen'));
+  });
+}
+
+/* Bilder einer festen Kategorie samt Spielständen atomar löschen, Kategorie behalten. */
+async function deleteImagesInCategory(categoryId) {
+  if (isVaultCategoryId(categoryId) && vaultLocked) throw new Error('Tresor gesperrt');
+  const connection = await db();
+  return new Promise((resolve, reject) => {
+    const tx = connection.transaction(['images', 'saves'], 'readwrite');
+    const deleted = new Set();
+    const images = tx.objectStore('images');
+    // Alte Tresor-ID ebenfalls berücksichtigen.
+    const ids = isVaultCategoryId(categoryId) ? ['safe', 'tresor'] : [categoryId];
+    let pending = ids.length;
+    for (const id of ids) {
+      const req = images.index('categoryId').openCursor(IDBKeyRange.only(id));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          deleted.add(cursor.value.id);
+          cursor.delete();
+          cursor.continue();
+        } else if (--pending === 0) {
+          const saves = tx.objectStore('saves').openCursor();
+          saves.onsuccess = () => {
+            const saved = saves.result;
+            if (!saved) return;
+            if (deleted.has(saved.value.imageId)) saved.delete();
+            saved.continue();
+          };
+        }
+      };
+    }
+    tx.oncomplete = () => resolve(deleted);
+    tx.onerror = () => reject(tx.error || new Error('Bilder konnten nicht gelöscht werden'));
     tx.onabort = () => reject(tx.error || new Error('Löschen abgebrochen'));
   });
 }
@@ -3011,7 +3050,7 @@ async function openCategoryManager() {
     await loadCategories();
     await renderCategoryManager();
     $('#categoryOverlay').classList.add('show');
-    $('#categoryNewName').focus();
+    $('#categoryClose').focus();
   } catch (err) {
     console.error(err);
     toast('Kategorien konnten nicht geladen werden');
@@ -3040,15 +3079,54 @@ async function renderCategoryManager() {
   const counts = await getCategoryImageCounts();
   list.replaceChildren();
   const own = categories.filter(cat => !cat.builtin);
-  if (!own.length) {
+  if (!categories.length) {
     const empty = document.createElement('div');
     empty.className = 'category-empty';
     empty.textContent = 'Noch keine eigenen Kategorien vorhanden.';
     list.appendChild(empty);
   }
-  for (const cat of own) {
+  for (const cat of categories) {
     const row = document.createElement('div');
     row.className = 'category-row';
+    if (cat.builtin) {
+      const label = document.createElement('span');
+      label.className = 'category-fixed-name';
+      label.textContent = cat.name + ' (fest)';
+      const clear = document.createElement('button');
+      clear.type = 'button';
+      clear.className = 'danger';
+      clear.textContent = 'Bilder löschen';
+      clear.setAttribute('aria-label', 'Alle Bilder der Kategorie ' + cat.name + ' löschen');
+      const count = counts.get(cat.id) || 0;
+      clear.disabled = count === 0;
+      clear.addEventListener('click', async () => {
+        if (isVaultCategoryId(cat.id) && vaultLocked) {
+          toast('Tresor zuerst öffnen');
+          return;
+        }
+        const n = counts.get(cat.id) || 0;
+        if (!confirm(`Alle ${n} Bild${n === 1 ? '' : 'er'} aus „${cat.name}“ und die zugehörigen Spielstände dauerhaft löschen? Die Kategorie bleibt erhalten.`)) return;
+        clear.disabled = true;
+        try {
+          const deleted = await deleteImagesInCategory(cat.id);
+          if (setupImage && deleted.has(setupImage.id)) {
+            if (setupImageUrl) URL.revokeObjectURL(setupImageUrl);
+            setupImageUrl = null;
+            setupImage = null;
+          }
+          await buildGallery();
+          await renderCategoryManager();
+          toast(`${deleted.size} Bild${deleted.size === 1 ? '' : 'er'} gelöscht`);
+        } catch (err) {
+          console.error(err);
+          toast('Bilder konnten nicht gelöscht werden');
+          clear.disabled = false;
+        }
+      });
+      row.append(label, clear);
+      list.appendChild(row);
+      continue;
+    }
     const input = document.createElement('input');
     input.value = cat.name;
     input.maxLength = 50;
@@ -3481,6 +3559,14 @@ async function addImageFromBlob(blob, name) {
 }
 
 $('#btnAddFile').addEventListener('click', () => $('#fileInput').click());
+$('#btnCamera').addEventListener('click', () => $('#cameraInput').click());
+$('#cameraInput').addEventListener('change', async event => {
+  const files = Array.from(event.target.files || []);
+  event.target.value = '';
+  for (const file of files) {
+    await addImageFromBlob(file, 'Kamera ' + new Date().toLocaleString('de-DE'));
+  }
+});
 $('#fileInput').addEventListener('change', async e => {
   const files = Array.from(e.target.files || []);
   e.target.value = '';
